@@ -703,12 +703,12 @@
           let created = 0; const logs = [];
           for (const f of files) {
             try {
-              let wb;
-              if (f.ext === 'csv') { const csvText = atob(f.data); wb = XLSX.read(csvText, { type: 'string' }); }
-              else { wb = XLSX.read(f.data, { type: 'base64' }); }
-              const best = selectBestSheet(wb);
-              const ws = wb.Sheets[best];
-              const rows = rowsFromSheetSmart(ws);
+              let rows = [];
+              if (window.electronAPI.parseWorkbook) {
+                const parsed = await window.electronAPI.parseWorkbook(f.data, f.ext);
+                const bestName = parsed.sheetNames?.[0] || '';
+                rows = (parsed.sheets.find(s=>s.name===bestName)?.rows) || [];
+              }
               const cls = classifyDataset(rows, best);
               await window.electronAPI.datasets.create(`${f.name} [${best}]`, rows, { from: 'dir', type: cls.type });
               created += 1; logs.push(`${f.name}✓`);
@@ -773,8 +773,23 @@
         const ok = await ensureXlsx(); if (!ok) { hideLoading(); return; }
         const file = await window.electronAPI.openFile();
         if (!file) return;
-        if (file.ext === 'csv') { const csvText = atob(file.data); const wb = XLSX.read(csvText, { type: 'string' }); await openSheetPicker(wb, file.name); }
-        else { const wb = XLSX.read(file.data, { type: 'base64' }); await openSheetPicker(wb, file.name); }
+        if (window.electronAPI.parseWorkbook) {
+          const parsed = await window.electronAPI.parseWorkbook(file.data, file.ext);
+          // If multiple sheets, open picker; otherwise use the single sheet
+          if (parsed.sheetNames && parsed.sheetNames.length>1) {
+            // Rebuild workbook-like obj for picker
+            const wb = { SheetNames: parsed.sheetNames, Sheets: {} };
+            parsed.sheets.forEach(s=>{ wb.Sheets[s.name] = { __rows: s.rows }; });
+            // Adapt rowsFromSheetSmart for picker usage
+            const original = window.rowsFromSheetSmart;
+            window.rowsFromSheetSmart = function(ws){ return ws.__rows || []; };
+            await openSheetPicker(wb, file.name);
+            window.rowsFromSheetSmart = original;
+          } else {
+            currentData = parsed.sheets?.[0]?.rows || [];
+            showToast('Файл Excel загружен', 'success');
+          }
+        }
         document.querySelector('[data-tab="unit-economics"]').click();
       } catch (err) { showToast('Ошибка чтения файла: ' + err.message, 'error'); }
       finally { hideLoading(); }
