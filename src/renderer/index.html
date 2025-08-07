@@ -94,6 +94,10 @@
     .table th, .table td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
     .table th { position: sticky; top: 0; background: var(--bg-secondary); z-index: 1; }
     .table tr:hover td { background: rgba(255,255,255,0.02); }
+    .table.zebra tbody tr:nth-child(even) td { background: rgba(255,255,255,0.01); }
+    .compact .table th, .compact .table td { padding: 6px 8px; }
+    .toolbar { display:flex; gap:8px; align-items:center; }
+    .kpi-spark { width: 100%; height: 46px; }
     .tab-content { display: none; animation: fadeIn 0.4s ease-out; /* height removed for natural flow */ overflow-y: auto; padding-right: 10px; position: relative; }
     .tab-content::-webkit-scrollbar { width: 6px; }
     .tab-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -188,10 +192,13 @@
       <div id="datasetsContent" class="card section">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 8px;">
           <div id="datasetsListTitle" style="font-weight:600;">Наборы данных</div>
-          <input id="datasetsSearch" placeholder="Поиск..." class="input" />
+          <div class="toolbar">
+            <input id="datasetsSearch" placeholder="Поиск..." class="input" />
+            <button class="icon-btn" id="toggleDensity" title="Плотность"><i class="ti ti-arrows-vertical"></i></button>
+          </div>
         </div>
-        <div id="datasetsList" style="margin-bottom:16px; overflow:auto; border:1px solid var(--border); border-radius:10px;">
-          <table class="table" id="datasetsTable">
+        <div id="datasetsList" class="zebra" style="margin-bottom:16px; overflow:auto; border:1px solid var(--border); border-radius:10px;">
+          <table class="table zebra" id="datasetsTable">
             <thead><tr><th>Имя набора</th><th>Дата</th><th>Строк</th><th style="width:160px">Действия</th></tr></thead>
             <tbody></tbody>
           </table>
@@ -546,6 +553,7 @@
 
     document.querySelector('[data-tab="datasets"]').addEventListener('click', () => { setTimeout(renderDatasets, 0); });
     const datasetsSearch = document.getElementById('datasetsSearch'); if (datasetsSearch) datasetsSearch.addEventListener('input', () => renderDatasets());
+    const toggleDensityBtn = document.getElementById('toggleDensity'); if (toggleDensityBtn) toggleDensityBtn.addEventListener('click', ()=>{ const content = document.getElementById('datasetsContent'); content?.classList.toggle('compact'); });
 
     // Reports
     const reportsRegistry = [
@@ -617,16 +625,19 @@
           const n = currentReportRows.length || 1;
           const avgMargin = (currentReportRows.reduce((a,c)=>a+(Number(c.margin)||0),0)/n)||0;
           const avgPct = (currentReportRows.reduce((a,c)=>a+(Number(c.marginPct)||0),0)/n)||0;
+          const series = currentReportRows.slice(0, 50).map(r=>Number(r.margin)||0);
           kpis.push({ label:'Записей', value:n });
-          kpis.push({ label:'Средняя маржа', value: avgMargin.toFixed(0) });
-          kpis.push({ label:'Маржа, %', value: avgPct.toFixed(2)+'%' });
+          kpis.push({ label:'Средняя маржа', value: avgMargin.toFixed(0), series });
+          kpis.push({ label:'Маржа, %', value: avgPct.toFixed(2)+'%', series: currentReportRows.slice(0,50).map(r=>Number(r.marginPct)||0) });
         } else if (result.summary) {
           kpis.push({ label:'Строк', value: result.summary.rowsCount });
           kpis.push({ label:'Полей', value: result.summary.columnsCount });
         }
         if (kpis.length) {
           kpiEl.style.display='grid';
-          kpiEl.innerHTML = kpis.map(k=>`<div class="kpi-card glass"><div class="kpi-label">${k.label}</div><div class="kpi-value">${k.value}</div></div>`).join('');
+          kpiEl.innerHTML = kpis.map((k,i)=>`<div class="kpi-card glass"><div class="kpi-label">${k.label}</div><div class="kpi-value">${k.value}</div>${k.series?`<canvas class="kpi-spark" id="kpiSpark${i}"></canvas>`:''}</div>`).join('');
+          // render sparklines
+          kpis.forEach((k,i)=>{ if (!k.series) return; const cvs = document.getElementById(`kpiSpark${i}`); if (!cvs) return; const ctx = cvs.getContext('2d'); new Chart(ctx, { type:'line', data:{ labels:k.series.map((_,idx)=>idx+1), datasets:[{ data:k.series, borderColor:'rgba(42,127,255,1)', backgroundColor:'rgba(42,127,255,0.15)', fill:true, tension:0.35, pointRadius:0 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:{ enabled:false } }, scales:{ x:{ display:false }, y:{ display:false } } }); });
         } else { kpiEl.style.display='none'; kpiEl.innerHTML=''; }
         renderChartIfApplicable(resultEl, currentReportRows);
         showToast('Отчёт готов', 'success');
@@ -640,7 +651,8 @@
       const labels = rows.slice(0, 50).map((_, i) => `#${i+1}`);
       const values = rows.slice(0, 50).map(r => Number(r.margin) || 0);
       if (activeChart) { activeChart.destroy(); }
-      activeChart = new Chart(canvas.getContext('2d'), { type: 'bar', data: { labels, datasets: [{ label: 'Маржа', data: values, backgroundColor: 'rgba(42,127,255,0.4)', borderColor: 'rgba(42,127,255,1)', borderWidth: 1 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') } }, y: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') } } } } });
+      const tickColor = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') || '#9aa0a6';
+      activeChart = new Chart(canvas.getContext('2d'), { type: 'bar', data: { labels, datasets: [{ label: 'Маржа', data: values, backgroundColor: 'rgba(42,127,255,0.35)', borderColor: 'rgba(42,127,255,1)', borderWidth: 1, borderRadius: 6 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: tickColor }, grid: { color: 'rgba(255,255,255,0.05)' } }, y: { ticks: { color: tickColor }, grid: { color: 'rgba(255,255,255,0.05)' } } } } });
     }
 
     function exportToCsv(rows) {
