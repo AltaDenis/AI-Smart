@@ -440,6 +440,7 @@
         // Hide report blocks initially
         const rr = document.getElementById('reportResult'); if (rr) rr.style.display='none';
         const rk = document.getElementById('reportKPI'); if (rk) rk.style.display='none';
+        const re = document.getElementById('reportEmpty'); if (re) re.style.display='block';
 
         // Start hero phrases rotation
         const phrases = [
@@ -596,11 +597,11 @@
           <div style="color:var(--text-secondary); font-size:13px;">${r.description}</div>
         </div>
       `).join('');
-      gallery.querySelectorAll('[data-report-id]').forEach(card => { card.addEventListener('click', async () => { selectedReportId = card.getAttribute('data-report-id'); gallery.querySelectorAll('[data-report-id]').forEach(c => c.style.outline = 'none'); card.style.outline = '2px solid var(--accent-blue)'; await updateMappingPanel(); await loadExistingMapping(); }); });
+      gallery.querySelectorAll('[data-report-id]').forEach(card => { card.addEventListener('click', async () => { selectedReportId = card.getAttribute('data-report-id'); gallery.querySelectorAll('[data-report-id]').forEach(c => c.style.outline = 'none'); card.style.outline = '2px solid var(--accent-blue)'; await updateMappingPanel(); await loadExistingMapping(); const rr=document.getElementById('reportResult'); const rk=document.getElementById('reportKPI'); const re=document.getElementById('reportEmpty'); if (rr) rr.style.display='none'; if (rk) rk.style.display='none'; if (re) re.style.display='block'; }); });
 
       const select = document.getElementById('reportDatasetSelect'); const items = await window.electronAPI.datasets.list(); select.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.rowsCount})</option>`).join('');
       await updateMappingPanel();
-      select.addEventListener('change', async () => { await updateMappingPanel(); await loadExistingMapping(); });
+      select.addEventListener('change', async () => { await updateMappingPanel(); await loadExistingMapping(); const rr=document.getElementById('reportResult'); const rk=document.getElementById('reportKPI'); const re=document.getElementById('reportEmpty'); if (rr) rr.style.display='none'; if (rk) rk.style.display='none'; if (re) re.style.display='block'; });
     }
 
     async function getAvailableFieldsForSelectedDataset() {
@@ -641,9 +642,10 @@
         let mapping = {}; if (report.requiredFields && report.requiredFields.length > 0) { document.querySelectorAll('[data-map-key]')?.forEach(sel => { const key = sel.getAttribute('data-map-key'); if (sel.value) mapping[key] = sel.value; }); }
         const result = report.compute(rows, mapping);
         currentReportRows = result.rows || [];
-        const resultEl = document.getElementById('reportResult'); const kpiEl = document.getElementById('reportKPI');
+        const resultEl = document.getElementById('reportResult'); const kpiEl = document.getElementById('reportKPI'); const emptyEl = document.getElementById('reportEmpty');
         const summaryBlock = result.summary ? `<div style="margin-bottom:12px; color:var(--text-secondary)">Строк: ${result.summary.rowsCount}, Полей: ${result.summary.columnsCount}</div>` : '';
         resultEl.innerHTML = `${summaryBlock}${renderTable(currentReportRows.slice(0, 1000))}`;
+        if (resultEl) resultEl.style.display='block'; if (emptyEl) emptyEl.style.display='none';
         // KPI header (simple)
         const kpis = [];
         if (report.id === 'unit-mock') {
