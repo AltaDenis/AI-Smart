@@ -1231,7 +1231,8 @@
       const resultEl = document.getElementById('unitResult');
       if (resultEl) {
         resultEl.style.display='block';
-        resultEl.innerHTML = kpiHtml + renderTable(result.map(({sku,name,category_path,scheme,price,cost,ratePct,commission,logistics,margin,marginPct})=>({sku,name,category_path,scheme,price,cost,ratePct,commission,logistics,margin,marginPct})).slice(0,1)) + renderTable(result);
+        const displayRows = result.map(({sku,name,category_path,scheme,price,cost,ratePct,commission,logistics,margin,marginPct})=>({sku,name,category_path,scheme,price,cost,ratePct,commission,logistics,margin,marginPct}));
+        resultEl.innerHTML = kpiHtml + renderTable(displayRows);
       }
       return result;
     }
