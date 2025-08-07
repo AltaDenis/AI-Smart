@@ -473,6 +473,10 @@
           <i class="ti ti-file-report"></i>
           <span>Отчёты</span>
         </div>
+        <div class="nav-item" data-tab="datasets">
+          <i class="ti ti-database"></i>
+          <span>Данные</span>
+        </div>
         <div class="nav-item" data-tab="unit-economics">
           <i class="ti ti-currency-rouble"></i>
           <span>Юнит-экономика</span>
@@ -537,6 +541,19 @@
           <input type="text" id="chatInput" placeholder="Введите запрос..." />
           <button class="send-btn" id="sendChat">➤</button>
         </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="datasets">
+      <div class="header">
+        <h1 class="page-title">Данные</h1>
+        <div>
+          <button class="btn" id="saveDatasetBtn">Сохранить текущий набор</button>
+        </div>
+      </div>
+      <div id="datasetsContent">
+        <div id="datasetsList" style="margin-bottom:16px;"></div>
+        <div id="datasetPreview"></div>
       </div>
     </div>
 
@@ -630,6 +647,13 @@
         setSetting: async (key, value) => { localStorage.setItem(key, value); return true; },
         openFile: async () => null,
         openDirectory: async () => null,
+        datasets: {
+          list: async () => [],
+          create: async (name, data, options) => ({ id: 'temp-id', name: name, rowsCount: data.length, createdAt: new Date() }),
+          get: async (id) => ({ rows: [] }),
+          rename: async (id, newName) => true,
+          delete: async (id) => true,
+        }
       };
     }
 
@@ -884,13 +908,11 @@
           if (ext === 'csv') {
             const text = await file.text();
             const wb = XLSX.read(text, { type: 'string' });
-            const rows = parseWorkbookToJSON(wb);
-            currentData = rows;
+            currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
           } else {
             const buf = await file.arrayBuffer();
             const wb = XLSX.read(buf, { type: 'array' });
-            const rows = parseWorkbookToJSON(wb);
-            currentData = rows;
+            currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
           }
           const summary = document.getElementById('fileSummary');
           if (summary) summary.textContent = `Файл «${name}» загружен: ${currentData.length || 0} строк.`;
@@ -901,6 +923,137 @@
         }
       });
     }
+
+    // Simple toasts
+    const toastRoot = document.createElement('div');
+    toastRoot.style.position = 'fixed';
+    toastRoot.style.right = '20px';
+    toastRoot.style.bottom = '20px';
+    toastRoot.style.display = 'flex';
+    toastRoot.style.flexDirection = 'column';
+    toastRoot.style.gap = '8px';
+    document.body.appendChild(toastRoot);
+    function showToast(text, type = 'info') {
+      const el = document.createElement('div');
+      el.textContent = text;
+      el.style.padding = '10px 12px';
+      el.style.borderRadius = '8px';
+      el.style.color = '#fff';
+      el.style.fontSize = '14px';
+      el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+      el.style.background = type === 'error' ? '#ef4444' : type === 'success' ? '#22c55e' : '#3b82f6';
+      toastRoot.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    // Drag & drop import on unit-economics area
+    const uploadArea = document.getElementById('fileUploadArea');
+    if (uploadArea) {
+      ['dragenter','dragover'].forEach(ev => uploadArea.addEventListener(ev, e => { e.preventDefault(); uploadArea.style.borderColor = 'var(--accent-blue)'; }));
+      ['dragleave','drop'].forEach(ev => uploadArea.addEventListener(ev, e => { e.preventDefault(); uploadArea.style.borderColor = 'var(--border)'; }));
+      uploadArea.addEventListener('drop', async (e) => {
+        const f = e.dataTransfer.files?.[0];
+        if (!f) return;
+        try {
+          const name = f.name; const ext = name.split('.').pop().toLowerCase();
+          if (ext === 'csv') {
+            const text = await f.text();
+            const wb = XLSX.read(text, { type: 'string' });
+            currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
+          } else {
+            const buf = await f.arrayBuffer();
+            const wb = XLSX.read(buf, { type: 'array' });
+            currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
+          }
+          const summary = document.getElementById('fileSummary');
+          if (summary) summary.textContent = `Файл «${name}» загружен: ${currentData.length || 0} строк.`;
+          showToast('Файл загружен', 'success');
+        } catch (err) {
+          showToast('Ошибка загрузки файла: ' + err.message, 'error');
+        }
+      });
+    }
+
+    // Datasets UI
+    async function renderDatasets() {
+      const listEl = document.getElementById('datasetsList');
+      const prevEl = document.getElementById('datasetPreview');
+      if (!listEl || !prevEl) return;
+      const items = await window.electronAPI.datasets.list();
+      if (!items || items.length === 0) {
+        listEl.innerHTML = '<div style="color:var(--text-secondary)">Нет сохранённых наборов данных</div>';
+        prevEl.innerHTML = '';
+        return;
+      }
+      listEl.innerHTML = items.map(i => `
+        <div data-id="${i.id}" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px; background:var(--bg-secondary)">
+          <div style="display:flex; gap:12px; align-items:center;">
+            <i class="ti ti-database"></i>
+            <div>
+              <div style="font-weight:600;">${i.name}</div>
+              <div style="color:var(--text-secondary); font-size:12px;">${new Date(i.createdAt).toLocaleString()} • ${i.rowsCount} строк</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn" data-action="preview">Предпросмотр</button>
+            <button class="btn" data-action="rename">Переименовать</button>
+            <button class="btn" data-action="delete" style="background:#ef4444">Удалить</button>
+          </div>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll('[data-action]')?.forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const card = btn.closest('[data-id]');
+          const id = card.getAttribute('data-id');
+          const action = btn.getAttribute('data-action');
+          if (action === 'preview') {
+            const data = await window.electronAPI.datasets.get(id);
+            const rows = data?.rows || [];
+            prevEl.innerHTML = renderTable(rows.slice(0, 50));
+          } else if (action === 'rename') {
+            const newName = prompt('Новое имя набора:');
+            if (!newName) return;
+            await window.electronAPI.datasets.rename(id, newName);
+            showToast('Набор переименован', 'success');
+            renderDatasets();
+          } else if (action === 'delete') {
+            if (!confirm('Удалить набор данных?')) return;
+            await window.electronAPI.datasets.delete(id);
+            showToast('Набор удалён', 'success');
+            renderDatasets();
+          }
+        });
+      });
+    }
+
+    function renderTable(rows) {
+      if (!rows || rows.length === 0) return '<div style="color:var(--text-secondary)">Пусто</div>';
+      const cols = Array.from(new Set(rows.flatMap(r => Object.keys(r))));
+      const thead = `<tr>${cols.map(c => `<th style="text-align:left; padding:8px; border-bottom:1px solid var(--border)">${c}</th>`).join('')}</tr>`;
+      const tbody = rows.map(r => `<tr>${cols.map(c => `<td style="padding:8px; border-bottom:1px solid var(--border)">${r[c] ?? ''}</td>`).join('')}</tr>`).join('');
+      return `<div style="overflow:auto; border:1px solid var(--border); border-radius:8px;"><table style="border-collapse:collapse; min-width:600px; width:100%">${thead}${tbody}</table></div>`;
+    }
+
+    const saveDatasetBtn = document.getElementById('saveDatasetBtn');
+    if (saveDatasetBtn) {
+      saveDatasetBtn.addEventListener('click', async () => {
+        if (!currentData || !currentData.length) {
+          showToast('Нет данных для сохранения', 'error');
+          return;
+        }
+        const name = prompt('Имя набора данных:', 'Новый набор');
+        if (!name) return;
+        const item = await window.electronAPI.datasets.create(name, currentData, { from: 'import' });
+        showToast('Набор сохранён', 'success');
+        renderDatasets();
+      });
+    }
+
+    // When switching to datasets tab, refresh list
+    document.querySelector('[data-tab="datasets"]').addEventListener('click', () => {
+      setTimeout(renderDatasets, 0);
+    });
   </script>
 </body>
 </html>
