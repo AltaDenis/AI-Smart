@@ -182,6 +182,7 @@
     @keyframes skl { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     /* Prevent body scroll when modal open */
     body.modal-open { overflow: hidden; }
+    @keyframes float { 0% { transform: translateY(0) translateX(0); } 50% { transform: translateY(-8px) translateX(6px); } 100% { transform: translateY(0) translateX(0); } }
   </style>
 </head>
 <body>
@@ -236,20 +237,10 @@
         <div class="greeting" id="greetingText">Добро пожаловать!</div>
         <p class="subtext hero-rotate" id="subtext">Принимайте решения на основе точной аналитики и прогнозов.</p>
       </div>
-      <div class="kpi-grid" id="dashKpi" style="margin-top: 8px;">
-        <div class="kpi-card glass"><div class="kpi-label">Наборов данных</div><div class="kpi-value">—</div></div>
-        <div class="kpi-card glass"><div class="kpi-label">Строк всего</div><div class="kpi-value">—</div></div>
-        <div class="kpi-card glass"><div class="kpi-label">Средний размер</div><div class="kpi-value">—</div></div>
-        <div class="kpi-card glass"><div class="kpi-label">Последний набор</div><div class="kpi-value">—</div></div>
-      </div>
-      <div class="card section glass" style="margin-top:12px;">
-        <div style="font-weight:600; margin-bottom:8px;">Быстрые действия</div>
-        <div style="display:flex; flex-wrap:wrap; gap:8px;">
-          <button class="btn" id="qaImport"><i class="ti ti-upload"></i>&nbsp;Импорт данных</button>
-          <button class="btn btn-secondary" id="qaDatasets"><i class="ti ti-database"></i>&nbsp;Наборы данных</button>
-          <button class="btn btn-secondary" id="qaReports"><i class="ti ti-file-report"></i>&nbsp;Отчёты</button>
-          <button class="btn btn-secondary" id="qaSettings"><i class="ti ti-settings"></i>&nbsp;Настройки</button>
-        </div>
+      <div class="hero-visual" style="position:relative; width:100%; height:260px; margin-top: 12px; overflow:hidden; border-radius:12px; border:1px solid var(--border); background: radial-gradient(1200px 400px at -10% -30%, rgba(42,127,255,0.20), rgba(42,127,255,0.0)), radial-gradient(800px 300px at 120% 120%, rgba(42,127,255,0.18), rgba(42,127,255,0.0));">
+        <div class="blob" style="position:absolute; width:220px; height:220px; left:-40px; top:-40px; background: radial-gradient(circle at 30% 30%, rgba(42,127,255,0.6), rgba(42,127,255,0)); filter: blur(18px); animation: float 8s ease-in-out infinite; border-radius: 50%;"></div>
+        <div class="blob" style="position:absolute; width:260px; height:260px; right:-60px; bottom:-60px; background: radial-gradient(circle at 70% 70%, rgba(42,127,255,0.45), rgba(42,127,255,0)); filter: blur(22px); animation: float 11s ease-in-out infinite reverse; border-radius: 50%;"></div>
+        <div class="blob" style="position:absolute; width:140px; height:140px; right:30%; top:20%; background: radial-gradient(circle at 50% 50%, rgba(42,127,255,0.35), rgba(42,127,255,0)); filter: blur(14px); animation: float 9s ease-in-out infinite; border-radius: 50%;"></div>
       </div>
       </div>
     </div>
@@ -403,18 +394,6 @@
       };
     }
 
-    document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
-      item.addEventListener('click', () => {
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        item.classList.add('active');
-        document.getElementById(item.dataset.tab).classList.add('active');
-        // Ensure settings drawer is closed when switching tabs
-        settingsModal.classList.remove('active');
-        // breadcrumb removed with topbar
-      });
-    });
-
     function shadeColor(color, percent) {
       let R = parseInt(color.slice(1, 3), 16);
       let G = parseInt(color.slice(3, 5), 16);
@@ -553,18 +532,7 @@
           const totalRows = items.reduce((a,c)=> a + (c.rowsCount||0), 0);
           const avgSize = totalDatasets ? Math.round(totalRows / totalDatasets) : 0;
           const lastItem = items[0];
-          const kpi = document.getElementById('dashKpi');
-          if (kpi) {
-            const values = [totalDatasets, totalRows, avgSize, lastItem ? lastItem.name : '—'];
-            kpi.querySelectorAll('.kpi-value').forEach((el, idx)=> el.textContent = values[idx] ?? '—');
-          }
-        } catch {}
-
-        // Quick actions
-        const qaImport = document.getElementById('qaImport'); if (qaImport) qaImport.addEventListener('click', ()=>{ document.querySelector('[data-tab="unit-economics"]').click(); setTimeout(()=>document.getElementById('selectFileBtn')?.click(), 100); });
-        const qaDatasets = document.getElementById('qaDatasets'); if (qaDatasets) qaDatasets.addEventListener('click', ()=> document.querySelector('[data-tab="datasets"]').click());
-        const qaReports = document.getElementById('qaReports'); if (qaReports) qaReports.addEventListener('click', ()=> document.querySelector('[data-tab="reports"]').click());
-        const qaSettings = document.getElementById('qaSettings'); if (qaSettings) qaSettings.addEventListener('click', ()=> settingsModal.classList.add('active'));
+         } catch {}
 
 
         const savedUserName = await window.electronAPI.getSetting('userName');
@@ -844,6 +812,66 @@
       if (e.key==='ArrowUp') { e.preventDefault(); items[active]?.classList.remove('active'); active = (active-1+items.length)%items.length; items[active]?.classList.add('active'); }
       if (e.key==='Enter') { e.preventDefault(); const idx = Number(items[active]?.getAttribute('data-idx'))||0; commands[idx].run(); closeCmdPal(); }
     });
+
+    function bindTabs() {
+      const items = document.querySelectorAll('.nav-item[data-tab]');
+      items.forEach(item => {
+        item.addEventListener('click', () => {
+          const targetId = item.dataset.tab;
+          if (!targetId) return;
+          document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+          item.classList.add('active');
+          const target = document.getElementById(targetId);
+          if (target) target.classList.add('active');
+          settingsModal.classList.remove('active');
+          document.body.classList.remove('modal-open');
+        });
+      });
+    }
+    bindTabs();
+
+    async function persistAccent(color) {
+      try { await window.electronAPI.setSetting('accentColor', color); } catch {}
+    }
+
+    function restoreAccent(color) {
+      applyAccent(color);
+      const preview = document.getElementById('colorPreviewModal'); if (preview) preview.style.backgroundColor = color;
+      const val = document.getElementById('colorValueModal'); if (val) val.textContent = color;
+      const picker = document.getElementById('colorPickerModal'); if (picker) picker.value = color;
+    }
+
+    // Reintroduce persistent accent customization
+    const colorPickerModal = document.getElementById('colorPickerModal');
+    if (colorPickerModal) {
+      colorPickerModal.addEventListener('input', async (e)=>{ const color = e.target.value; applyAccent(color); persistAccent(color); const prev = document.getElementById('colorPreviewModal'); if (prev) prev.style.backgroundColor=color; const span = document.getElementById('colorValueModal'); if (span) span.textContent=color; });
+    }
+
+    // Excel open via dialog
+    async function openExcelDialog() {
+      try {
+        showLoading();
+        const file = await window.electronAPI.openFile();
+        if (!file) return;
+        let rows = [];
+        if (file.ext === 'csv') {
+          const csvText = atob(file.data);
+          const wb = XLSX.read(csvText, { type: 'string' });
+          rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
+        } else {
+          const wb = XLSX.read(file.data, { type: 'base64' });
+          rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
+        }
+        currentData = rows;
+        const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${file.name}» загружен: ${rows.length || 0} строк.`;
+        showToast('Файл Excel загружен', 'success');
+        document.querySelector('[data-tab="unit-economics"]').click();
+      } catch (err) { showToast('Ошибка чтения файла: ' + err.message, 'error'); }
+      finally { hideLoading(); }
+    }
+    // Optional: bind command palette entry already exists; add keyboard shortcut for quick import
+    document.addEventListener('keydown', (e)=>{ if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='i') { e.preventDefault(); openExcelDialog(); } });
   </script>
 </body>
 </html>
