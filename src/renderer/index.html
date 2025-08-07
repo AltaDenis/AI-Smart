@@ -718,7 +718,7 @@
           await loadBuiltInTariffs();
           const files = await window.electronAPI.openDirectory();
           if (!files || files.length === 0) return;
-          let created = 0; const logs = []; let lastCatalogId = null;
+          let created = 0; const logs = []; let lastCatalogId = null; let lastFunnelId = null;
           for (const f of files) {
             try {
               let rows = [];
@@ -730,6 +730,7 @@
               const cls = classifyDataset(rows, bestName);
               const createdItem = await window.electronAPI.datasets.create(`${f.name} [${bestName}]`, rows, { from: 'dir', type: cls.type });
               if (cls.type === 'catalog' && createdItem?.id) lastCatalogId = createdItem.id;
+              if (cls.type === 'sales_funnel' && createdItem?.id) lastFunnelId = createdItem.id;
               created += 1; logs.push(`${f.name}✓`);
             } catch (err) { logs.push(`${f.name}✗`); }
           }
@@ -745,6 +746,21 @@
                   await renderReports(); await loadExistingMapping();
                   const dsSel = document.getElementById('reportDatasetSelect'); if (dsSel) { dsSel.value = lastCatalogId; dsSel.dispatchEvent(new Event('change')); }
                   selectedReportId = 'unit-economics-v1'; await updateMappingPanel();
+                  try { const fields = await getAvailableFieldsForSelectedDataset(); autoMapColumns(fields); } catch {}
+                  await runSelectedReport();
+                } catch {}
+              }, 0);
+            }
+          }
+          else if (lastFunnelId) {
+            const reportsBtn = document.querySelector('[data-tab="reports"]');
+            if (reportsBtn) {
+              reportsBtn.click();
+              setTimeout(async ()=>{
+                try {
+                  await renderReports(); await loadExistingMapping();
+                  const dsSel = document.getElementById('reportDatasetSelect'); if (dsSel) { dsSel.value = lastFunnelId; dsSel.dispatchEvent(new Event('change')); }
+                  selectedReportId = 'funnel-bottlenecks'; await updateMappingPanel();
                   try { const fields = await getAvailableFieldsForSelectedDataset(); autoMapColumns(fields); } catch {}
                   await runSelectedReport();
                 } catch {}
@@ -904,8 +920,10 @@
         return { summary, rows: issues.sort((a,b)=> Number(b.duplicate)-Number(a.duplicate) || Number(b.suspicious)-Number(a.suspicious) || (b.margin-a.margin)) };
       } },
       { id: 'unit-economics-v1', name: 'Юнит‑экономика v1', description: 'Комиссия по тарифам FBY/FBS/DBS; маржа по цене/себестоимости', requiredFields: ['sku','name','category_path','price','scheme','cost'], compute: (rows, mapping) => { const m=(r,k)=> r[mapping[k]||k]; const out = rows.map(r=>{ const sku=m(r,'sku'); const name=m(r,'name'); const cat=m(r,'category_path')||m(r,'Категория на Маркете *')||m(r,'Категория'); const scheme=(String(m(r,'scheme')||'FBS').toUpperCase()); const price=Number(String(m(r,'price')).replace(/[^0-9.,-]/g,'').replace(',','.'))||0; const cost=Number(String(m(r,'cost')).replace(/[^0-9.,-]/g,'').replace(',','.'))||0; const ratePct = matchTariffForCategory(['FBY','FBS','DBS'].includes(scheme)?scheme:'FBS', cat); const commission = price * (ratePct/100); const logistics = 0; const margin = price - cost - commission - logistics; const marginPct = price? (margin/price*100):0; return { sku, name, category_path:cat, scheme, price, cost, ratePct, commission: Number(commission.toFixed(2)), logistics, margin: Number(margin.toFixed(2)), marginPct: Number(marginPct.toFixed(2)) }; }); const kpi = []; const avgMargin = out.reduce((a,c)=>a+c.margin,0)/(out.length||1); const avgPct = out.reduce((a,c)=>a+c.marginPct,0)/(out.length||1); kpi.push({label:'Позиций', value: out.length}); kpi.push({label:'Средняя маржа ₽', value: avgMargin.toFixed(0)}); kpi.push({label:'Средняя маржинальность %', value: avgPct.toFixed(2)}); return { summary: { rowsCount: out.length, columnsCount: Object.keys(out[0]||{}).length, kpi }, rows: out }; } },
+      { id: 'low-margin-alerts', name: 'Низкая маржинальность (сигналы)', description: 'SKU с отрицательной маржей или маржинальностью ниже порога', requiredFields: ['sku','name','category_path','price','scheme','cost'], compute: (rows, mapping) => { const m=(r,k)=> r[mapping[k]||k]; const out = rows.map(r=>{ const sku=m(r,'sku'); const name=m(r,'name'); const cat=m(r,'category_path')||m(r,'Категория на Маркете *')||m(r,'Категория'); const scheme=(String(m(r,'scheme')||'FBS').toUpperCase()); const price=Number(String(m(r,'price')).replace(/[^0-9.,-]/g,'').replace(',','.'))||0; const cost=Number(String(m(r,'cost')).replace(/[^0-9.,-]/g,'').replace(',','.'))||0; const ratePct = matchTariffForCategory(['FBY','FBS','DBS'].includes(scheme)?scheme:'FBS', cat); const commission = price * (ratePct/100); const logistics = 0; const margin = price - cost - commission - logistics; const marginPct = price? (margin/price*100):0; return { sku, name, category_path:cat, scheme, price, cost, ratePct, commission: Number(commission.toFixed(2)), logistics, margin: Number(margin.toFixed(2)), marginPct: Number(marginPct.toFixed(2)) }; }); const bad = out.filter(x=> x.margin<0 || x.marginPct<5); const kpi = [{label:'Проблемных SKU', value: bad.length}]; return { summary: { rowsCount: bad.length, columnsCount: Object.keys(bad[0]||{}).length, kpi }, rows: bad.sort((a,b)=> a.margin - b.margin) }; } },
       { id: 'sales-geography', name: 'География продаж (сводка)', description: 'Агрегация по региону', requiredFields: ['region','orders_units','orders_amount_rub'], compute: (rows, mapping) => { const g=(r,k)=> r[mapping[k]||k]; const data = rows.map(r=>({ region:g(r,'region')||g(r,'Регион'), units:Number(g(r,'orders_units'))||0, amount:Number(g(r,'orders_amount_rub'))||0 })); const grouped = {}; data.forEach(x=>{ if(!x.region) return; grouped[x.region] = grouped[x.region] || { region:x.region, units:0, amount:0 }; grouped[x.region].units+=x.units; grouped[x.region].amount+=x.amount; }); const table=Object.values(grouped).sort((a,b)=>b.amount-a.amount); return { summary: { rowsCount: table.length, columnsCount: 3 }, rows: table }; } },
       { id: 'boost-summary', name: 'Буст (сводка)', description: 'Сводные метрики по бусту, ROAS', requiredFields: ['campaign','spend_rub','orders_amount_rub'], compute: (rows, mapping) => { const g=(r,k)=> r[mapping[k]||k]; const data = rows.map(r=>({ campaign:g(r,'campaign')||g(r,'Кампания'), spend:Number(g(r,'spend_rub'))||0, revenue:Number(g(r,'orders_amount_rub'))||0 })); const grouped={}; data.forEach(x=>{ const key=x.campaign||'—'; grouped[key]=grouped[key]||{ campaign:key, spend:0, revenue:0 }; grouped[key].spend+=x.spend; grouped[key].revenue+=x.revenue; }); const table=Object.values(grouped).map(x=>({ ...x, roas: x.spend? Number((x.revenue/x.spend).toFixed(2)) : null })).sort((a,b)=>(b.revenue-a.revenue)); return { summary: { rowsCount: table.length, columnsCount: 4 }, rows: table }; } },
+      { id: 'funnel-bottlenecks', name: 'Узкие места воронки', description: 'SKU/категории с просадкой конверсий', requiredFields: ['sku','brand','category','shows','added_to_cart','ordered_units','delivered_units'], compute: (rows, mapping) => { const g=(r,k)=> r[mapping[k]||k]; const norm = rows.map(r=>({ category:g(r,'category'), brand:g(r,'brand'), sku:g(r,'sku'), shows:Number(g(r,'shows'))||0, atc:Number(g(r,'added_to_cart'))||0, ord:Number(g(r,'ordered_units'))||0, del:Number(g(r,'delivered_units'))||0 })); const table = norm.map(x=>({ sku:x.sku, brand:x.brand, category:x.category, shows:x.shows, atc:x.atc, ord:x.ord, del:x.del, atc_rate: x.shows? Number((x.atc/x.shows*100).toFixed(2)) : 0, order_rate: x.atc? Number((x.ord/x.atc*100).toFixed(2)) : 0, delivery_rate: x.ord? Number((x.del/x.ord*100).toFixed(2)) : 0 })).filter(x=> x.shows>=100 && (x.order_rate<10 || x.delivery_rate<70)).sort((a,b)=> a.order_rate-b.order_rate || b.shows-a.shows); const kpi=[{label:'Проблемных позиций', value: table.length}]; return { summary: { rowsCount: table.length, columnsCount: Object.keys(table[0]||{}).length, kpi }, rows: table }; } },
       { id: 'sales-funnel', name: 'Воронка продаж (сводка)', description: 'Конверсия и эффективность по SKU/брендам/категориям', requiredFields: ['sku','brand','category','shows','added_to_cart','ordered_units','orders_amount_rub','delivered_units','delivered_amount_rub','visibility_index_pct','cart_to_order_conv_pct'], compute: (rows, mapping) => { const g=(r,k)=> r[mapping[k]||k]; const norm = rows.map(r=>({ category:g(r,'category'), brand:g(r,'brand'), sku:g(r,'sku'), shows:Number(g(r,'shows'))||0, atc:Number(g(r,'added_to_cart'))||0, ord:Number(g(r,'ordered_units'))||0, ordAmt:Number(g(r,'orders_amount_rub'))||0, del:Number(g(r,'delivered_units'))||0, delAmt:Number(g(r,'delivered_amount_rub'))||0, vis:Number(String(g(r,'visibility_index_pct')).replace(',','.'))||0, conv:Number(String(g(r,'cart_to_order_conv_pct')).replace(',','.'))||0 })); const total = norm.reduce((a,c)=>({ shows:a.shows+c.shows, atc:a.atc+c.atc, ord:a.ord+c.ord, ordAmt:a.ordAmt+c.ordAmt, del:a.del+c.del, delAmt:a.delAmt+c.delAmt }), {shows:0,atc:0,ord:0,ordAmt:0,del:0,delAmt:0}); const kpi=[{label:'Показы',value:total.shows},{label:'В корзину',value:total.atc},{label:'Заказано, шт',value:total.ord},{label:'Заказано, ₽',value:total.ordAmt.toFixed(0)},{label:'Доставлено, шт',value:total.del},{label:'Выручка, ₽',value:total.delAmt.toFixed(0)}]; const table = norm.map(x=>({ sku:x.sku, brand:x.brand, category:x.category, shows:x.shows, atc:x.atc, ord:x.ord, ordAmt: x.ordAmt, del:x.del, delAmt:x.delAmt, conv_pct: (x.ord && x.atc ? (x.ord/x.atc*100):0).toFixed(2) })).sort((a,b)=>b.delAmt-a.delAmt); return { summary: { rowsCount: rows.length, columnsCount: Object.keys(table[0]||{}).length, kpi }, rows: table }; } }
     ];
 
