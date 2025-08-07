@@ -557,6 +557,22 @@
       </div>
     </div>
 
+    <div class="tab-content" id="reports">
+      <div class="header">
+        <h1 class="page-title">Отчёты</h1>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <select id="reportDatasetSelect" style="background: var(--bg-tertiary); color: var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:8px 10px;"></select>
+          <button class="btn" id="runReportBtn">Сгенерировать</button>
+          <button class="btn" id="exportCsvBtn">Экспорт CSV</button>
+          <button class="btn" id="exportXlsxBtn">Экспорт XLSX</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:16px; align-items:flex-start;">
+        <div id="reportsGallery" style="flex:0 0 360px;"></div>
+        <div id="reportResult" style="flex:1;"></div>
+      </div>
+    </div>
+
     <div class="tab-content" id="settings">
       <div class="header">
         <h1 class="page-title">Настройки</h1>
@@ -1054,6 +1070,93 @@
     document.querySelector('[data-tab="datasets"]').addEventListener('click', () => {
       setTimeout(renderDatasets, 0);
     });
+
+    // Reports framework
+    const reportsRegistry = [
+      {
+        id: 'summary-basic',
+        name: 'Сводка по данным',
+        description: 'Количество строк и колонок, список полей',
+        compute: (rows) => {
+          const rowsCount = rows.length;
+          const fields = Array.from(new Set(rows.flatMap(r => Object.keys(r))));
+          return {
+            summary: { rowsCount, columnsCount: fields.length },
+            rows: fields.map(f => ({ field: f }))
+          };
+        }
+      },
+    ];
+
+    let selectedReportId = reportsRegistry[0]?.id;
+    let currentReportRows = [];
+
+    async function renderReports() {
+      // Gallery
+      const gallery = document.getElementById('reportsGallery');
+      gallery.innerHTML = reportsRegistry.map(r => `
+        <div data-report-id="${r.id}" style="border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; cursor:pointer; background: var(--bg-secondary);">
+          <div style="font-weight:600; margin-bottom:6px;">${r.name}</div>
+          <div style="color:var(--text-secondary); font-size:13px;">${r.description}</div>
+        </div>
+      `).join('');
+      gallery.querySelectorAll('[data-report-id]').forEach(card => {
+        card.addEventListener('click', () => {
+          selectedReportId = card.getAttribute('data-report-id');
+          gallery.querySelectorAll('[data-report-id]').forEach(c => c.style.outline = 'none');
+          card.style.outline = '2px solid var(--accent-blue)';
+        });
+      });
+
+      // Dataset select
+      const select = document.getElementById('reportDatasetSelect');
+      const items = await window.electronAPI.datasets.list();
+      select.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.rowsCount})</option>`).join('');
+    }
+
+    async function runSelectedReport() {
+      const select = document.getElementById('reportDatasetSelect');
+      const datasetId = select.value;
+      if (!datasetId) { showToast('Выберите набор данных', 'error'); return; }
+      const report = reportsRegistry.find(r => r.id === selectedReportId);
+      if (!report) { showToast('Не выбран отчёт', 'error'); return; }
+      const data = await window.electronAPI.datasets.get(datasetId);
+      const rows = data?.rows || [];
+      const result = report.compute(rows);
+      currentReportRows = result.rows || [];
+      const resultEl = document.getElementById('reportResult');
+      const summaryBlock = result.summary ? `<div style="margin-bottom:12px; color:var(--text-secondary)">Строк: ${result.summary.rowsCount}, Полей: ${result.summary.columnsCount}</div>` : '';
+      resultEl.innerHTML = `${summaryBlock}${renderTable(currentReportRows.slice(0, 1000))}`;
+      showToast('Отчёт готов', 'success');
+    }
+
+    function exportToCsv(rows) {
+      if (!rows || rows.length === 0) return;
+      const cols = Array.from(new Set(rows.flatMap(r => Object.keys(r))));
+      const csv = [cols.join(',')].concat(rows.map(r => cols.map(c => JSON.stringify(r[c] ?? '')).join(','))).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'report.csv'; a.click(); URL.revokeObjectURL(url);
+    }
+
+    function exportToXlsx(rows) {
+      if (!rows || rows.length === 0) return;
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Report');
+      XLSX.writeFile(wb, 'report.xlsx');
+    }
+
+    document.getElementById('runReportBtn').addEventListener('click', runSelectedReport);
+    document.getElementById('exportCsvBtn').addEventListener('click', () => exportToCsv(currentReportRows));
+    document.getElementById('exportXlsxBtn').addEventListener('click', () => exportToXlsx(currentReportRows));
+
+    // Refresh reports tab on open
+    const reportsTabBtn = document.querySelector('[data-tab="reports"]');
+    if (reportsTabBtn) {
+      reportsTabBtn.addEventListener('click', () => setTimeout(renderReports, 0));
+    }
   </script>
 </body>
 </html>
