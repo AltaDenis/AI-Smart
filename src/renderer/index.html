@@ -81,9 +81,7 @@
     .glass { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); backdrop-filter: blur(10px); }
     .btn:hover { filter: saturate(1.2) brightness(1.05); transform: translateY(-1px); }
     .btn:active { transform: translateY(0); filter: saturate(1); }
-    .topbar { position: sticky; top: 0; z-index: 5; margin-bottom: 16px; background: var(--bg-primary); }
-    .topbar-inner { display:flex; align-items:center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
-    .breadcrumbs { color: var(--text-tertiary); font-size: 12px; }
+    /* topbar removed */
     .kpi-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
     .kpi-card { padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); }
     .kpi-label { color: var(--text-tertiary); font-size: 12px; }
@@ -137,15 +135,7 @@
   </div>
 
   <div class="main-content">
-    <div class="topbar">
-      <div class="container topbar-inner">
-        <div class="breadcrumbs">AI‑Smart / <span id="crumb">Панель</span></div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input class="input" id="globalSearch" placeholder="Поиск..."/>
-          <button class="btn" id="openCmdPal" title="Командная палитра (Ctrl/Cmd+K)"><i class="ti ti-command"></i></button>
-        </div>
-      </div>
-    </div>
+    <!-- topbar removed for cleaner layout -->
     <div class="tab-content active" id="dashboard">
       <div class="container">
       <div class="header">
@@ -188,16 +178,7 @@
           <button class="btn" id="saveDatasetBtn">Сохранить текущий набор</button>
         </div>
       </div>
-      <div id="datasetsImportPanel" class="card section glass" style="margin-bottom:12px;">
-        <div class="section-title">Импорт данных</div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-          <button class="btn" id="dsSelectFileBtn"><i class="ti ti-upload"></i> Выбрать файл</button>
-          <button class="btn" id="dsOpenDirBtn"><i class="ti ti-folder"></i> Открыть папку</button>
-          <input type="file" id="dsFileInput" accept=".xlsx,.xls,.csv" style="display:none" />
-          <span id="dsImportSummary" style="color:var(--text-secondary)"></span>
-        </div>
-        <div id="dsDropArea" style="margin-top:8px; border:1px dashed var(--border); border-radius:10px; padding:12px; text-align:center; color:var(--text-secondary)">Перетащите файлы сюда для импорта</div>
-      </div>
+      <!-- simplified: import panel removed to avoid clutter -->
       <div id="datasetsContent" class="card section">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 8px;">
           <div id="datasetsListTitle" style="font-weight:600;">Наборы данных</div>
@@ -312,9 +293,7 @@
         document.getElementById(item.dataset.tab).classList.add('active');
         // Ensure settings drawer is closed when switching tabs
         settingsModal.classList.remove('active');
-        // Update breadcrumb
-        const crumbMap = { 'dashboard':'Панель', 'datasets':'Данные', 'reports':'Отчёты', 'unit-economics':'Юнит-экономика' };
-        const crumbEl = document.getElementById('crumb'); if (crumbEl) crumbEl.textContent = crumbMap[item.dataset.tab] || 'Панель';
+        // breadcrumb removed with topbar
       });
     });
 
@@ -378,6 +357,14 @@
     settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.remove('active'); });
     // Close on ESC
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') settingsModal.classList.remove('active'); });
+    // Global click outside drawer content
+    document.addEventListener('click', (e) => {
+      const content = document.querySelector('.modal-content');
+      if (!content) return;
+      const isDrawer = content.contains(e.target);
+      const isOpenBtn = e.target.closest && e.target.closest('#openSettings, #openSettingsNav');
+      if (settingsModal.classList.contains('active') && !isDrawer && !isOpenBtn) settingsModal.classList.remove('active');
+    }, true);
 
     function getInputs(prefix) {
       return { name: document.getElementById(`userName${prefix}`), email: document.getElementById(`userEmail${prefix}`), colorValue: document.getElementById(`colorValue${prefix}`) };
@@ -533,29 +520,6 @@
 
     document.querySelector('[data-tab="datasets"]').addEventListener('click', () => { setTimeout(renderDatasets, 0); });
     const datasetsSearch = document.getElementById('datasetsSearch'); if (datasetsSearch) datasetsSearch.addEventListener('input', () => renderDatasets());
-    // Datasets import handlers (panel)
-    (function(){
-      const dsSelectFileBtn = document.getElementById('dsSelectFileBtn');
-      const dsOpenDirBtn = document.getElementById('dsOpenDirBtn');
-      const dsFileInput = document.getElementById('dsFileInput');
-      const dsDropArea = document.getElementById('dsDropArea');
-      const dsImportSummary = document.getElementById('dsImportSummary');
-      if (dsSelectFileBtn && dsFileInput) {
-        dsSelectFileBtn.addEventListener('click', (e)=>{ e.preventDefault(); dsFileInput.click(); });
-        dsFileInput.addEventListener('change', async (e)=>{
-          const f = e.target.files?.[0]; if (!f) return; showLoading();
-          try { const name = f.name; const ext = name.split('.').pop().toLowerCase(); if (ext==='csv'){ const text=await f.text(); const wb=XLSX.read(text,{type:'string'}); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:null}); } else { const buf=await f.arrayBuffer(); const wb=XLSX.read(buf,{type:'array'}); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:null}); } dsImportSummary.textContent = `Файл «${name}» загружен: ${currentData.length||0} строк.`; showToast('Файл загружен','success'); } catch(err){ showToast('Ошибка импорта','error'); } finally { hideLoading(); dsFileInput.value=''; }
-        });
-      }
-      if (dsOpenDirBtn) {
-        dsOpenDirBtn.addEventListener('click', async ()=>{ showLoading(); try { const files=await window.electronAPI.openDirectory(); if (!files||!files.length) return; let totalRows=0, totalFiles=0; files.forEach(f=>{ let wb; if (f.ext==='csv'){ const csvText=atob(f.data); wb=XLSX.read(csvText,{type:'string'});} else { wb=XLSX.read(f.data,{type:'base64'});} const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:null}); totalFiles++; totalRows+=rows.length; }); currentData = { filesCount: totalFiles, rowsCount: totalRows }; dsImportSummary.textContent = `Загружено файлов: ${totalFiles}, суммарно строк: ${totalRows}.`; showToast('Файлы загружены','success'); } catch(err){ showToast('Ошибка импорта','error'); } finally { hideLoading(); } });
-      }
-      if (dsDropArea) {
-        ['dragenter','dragover'].forEach(ev=>dsDropArea.addEventListener(ev,(e)=>{ e.preventDefault(); dsDropArea.style.borderColor='var(--accent-blue)'; }));
-        ;['dragleave','drop'].forEach(ev=>dsDropArea.addEventListener(ev,(e)=>{ e.preventDefault(); dsDropArea.style.borderColor='var(--border)'; }));
-        dsDropArea.addEventListener('drop', async (e)=>{ const f=e.dataTransfer.files?.[0]; if(!f) return; showLoading(); try { const name=f.name; const ext=name.split('.').pop().toLowerCase(); if (ext==='csv'){ const text=await f.text(); const wb=XLSX.read(text,{type:'string'}); currentData=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:null}); } else { const buf=await f.arrayBuffer(); const wb=XLSX.read(buf,{type:'array'}); currentData=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:null}); } dsImportSummary.textContent=`Файл «${name}» загружен: ${currentData.length||0} строк.`; showToast('Файл загружен','success'); } catch(err){ showToast('Ошибка импорта','error'); } finally { hideLoading(); } });
-      }
-    })();
 
     // Reports
     const reportsRegistry = [
