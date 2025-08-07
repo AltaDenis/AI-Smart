@@ -241,6 +241,24 @@
         <div class="blob" style="position:absolute; width:220px; height:220px; left:-40px; top:-40px; background: radial-gradient(circle at 30% 30%, rgba(42,127,255,0.6), rgba(42,127,255,0)); filter: blur(18px); animation: float 8s ease-in-out infinite; border-radius: 50%;"></div>
         <div class="blob" style="position:absolute; width:260px; height:260px; right:-60px; bottom:-60px; background: radial-gradient(circle at 70% 70%, rgba(42,127,255,0.45), rgba(42,127,255,0)); filter: blur(22px); animation: float 11s ease-in-out infinite reverse; border-radius: 50%;"></div>
         <div class="blob" style="position:absolute; width:140px; height:140px; right:30%; top:20%; background: radial-gradient(circle at 50% 50%, rgba(42,127,255,0.35), rgba(42,127,255,0)); filter: blur(14px); animation: float 9s ease-in-out infinite; border-radius: 50%;"></div>
+        <svg width="100%" height="100%" style="position:absolute; inset:0; opacity:0.5;">
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="rgba(42,127,255,0.0)"/>
+              <stop offset="50%" stop-color="rgba(42,127,255,0.45)"/>
+              <stop offset="100%" stop-color="rgba(42,127,255,0.0)"/>
+            </linearGradient>
+          </defs>
+          <circle r="2" fill="url(#g1)">
+            <animateMotion dur="12s" repeatCount="indefinite" path="M-50,40 C 120,20 240,60 400,40 S 720,40 900,80"/>
+          </circle>
+          <circle r="2" fill="url(#g1)">
+            <animateMotion dur="15s" repeatCount="indefinite" path="M-60,200 C 150,180 260,220 420,200 S 740,200 940,240"/>
+          </circle>
+          <circle r="2" fill="url(#g1)">
+            <animateMotion dur="18s" repeatCount="indefinite" path="M-40,120 C 130,100 260,140 420,120 S 760,120 960,160"/>
+          </circle>
+        </svg>
       </div>
       </div>
     </div>
@@ -364,6 +382,27 @@
       <div class="modal-footer">
         <button class="btn" style="background: var(--bg-tertiary); color: var(--text-primary);" id="cancelSettings">Отмена</button>
         <button class="btn" id="saveSettingsModal">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheet selection modal -->
+  <div class="modal" id="sheetModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Выбор листа Excel</div>
+        <button class="modal-close" id="closeSheetModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Лист</label>
+          <select id="sheetSelect" class="input"></select>
+        </div>
+        <div id="sheetPreview" style="margin-top:10px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelSheet">Отмена</button>
+        <button class="btn" id="applySheet">Выбрать</button>
       </div>
     </div>
   </div>
@@ -569,9 +608,8 @@
         try {
           showLoading();
           const name = f.name; const ext = name.split('.').pop().toLowerCase();
-          if (ext === 'csv') { const text = await f.text(); const wb = XLSX.read(text, { type: 'string' }); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null }); }
-          else { const buf = await f.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array' }); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null }); }
-          const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${name}» загружен: ${currentData.length || 0} строк.`;
+          if (ext === 'csv') { const text = await f.text(); const wb = XLSX.read(text, { type: 'string' }); await openSheetPicker(wb, name); }
+          else { const buf = await f.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array' }); await openSheetPicker(wb, name); }
           showToast('Файл загружен', 'success');
         } catch (err) { showToast('Ошибка загрузки файла: ' + err.message, 'error'); } finally { hideLoading(); }
       });
@@ -586,9 +624,8 @@
         const name = file.name; const ext = name.split('.').pop().toLowerCase();
         try {
           showLoading();
-          if (ext === 'csv') { const text = await file.text(); const wb = XLSX.read(text, { type: 'string' }); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null }); }
-          else { const buf = await file.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array' }); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null }); }
-          const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${name}» загружен: ${currentData.length || 0} строк.`;
+          if (ext === 'csv') { const text = await file.text(); const wb = XLSX.read(text, { type: 'string' }); await openSheetPicker(wb, name); }
+          else { const buf = await file.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array' }); await openSheetPicker(wb, name); }
           showToast('Файл загружен', 'success');
         } catch (err) { showToast('Ошибка чтения файла: ' + err.message, 'error'); } finally { fileInput.value = ''; hideLoading(); }
       });
@@ -610,6 +647,63 @@
           showToast('Файлы загружены', 'success');
         } catch (err) { showToast('Ошибка: ' + err.message, 'error'); } finally { hideLoading(); }
       });
+    }
+
+    // Sheet picker helpers
+    const sheetModal = document.getElementById('sheetModal');
+    const closeSheetModal = document.getElementById('closeSheetModal');
+    const cancelSheet = document.getElementById('cancelSheet');
+    const applySheet = document.getElementById('applySheet');
+    const sheetSelect = document.getElementById('sheetSelect');
+    const sheetPreview = document.getElementById('sheetPreview');
+    let tempWorkbook = null; let tempFileName = '';
+
+    async function openSheetPicker(workbook, fileName) {
+      tempWorkbook = workbook; tempFileName = fileName;
+      const names = workbook.SheetNames || [];
+      sheetSelect.innerHTML = names.map(n=>`<option value="${n}">${n}</option>`).join('');
+      renderSheetPreview(names[0]);
+      sheetModal.classList.add('active');
+      document.body.classList.add('modal-open');
+      return new Promise((resolve)=>{
+        applySheet.onclick = ()=>{ const sel = sheetSelect.value; const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sel], { defval: null }); currentData = rows; const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${tempFileName}», лист «${sel}»: ${rows.length||0} строк.`; sheetModal.classList.remove('active'); document.body.classList.remove('modal-open'); resolve(true); };
+        const cancel = ()=>{ sheetModal.classList.remove('active'); document.body.classList.remove('modal-open'); resolve(false); };
+        cancelSheet.onclick = cancel; closeSheetModal.onclick = cancel;
+        sheetModal.onclick = (e)=>{ if (e.target===sheetModal) cancel(); };
+      });
+    }
+
+    function renderSheetPreview(name) {
+      try { const ws = tempWorkbook?.Sheets?.[name]; if (!ws) { sheetPreview.innerHTML=''; return; } const rows = XLSX.utils.sheet_to_json(ws, { defval: null }).slice(0, 50); sheetPreview.innerHTML = renderTable(rows); }
+      catch { sheetPreview.innerHTML=''; }
+    }
+    if (sheetSelect) sheetSelect.addEventListener('change', ()=> renderSheetPreview(sheetSelect.value));
+
+    // Integrate sheet picker into drag&drop
+    if (uploadArea) {
+      uploadArea.addEventListener('drop', async (e) => {
+        const f = e.dataTransfer.files?.[0]; if (!f) return;
+        try {
+          showLoading();
+          const name = f.name; const ext = name.split('.').pop().toLowerCase();
+          if (ext === 'csv') { const text = await f.text(); const wb = XLSX.read(text, { type: 'string' }); await openSheetPicker(wb, name); }
+          else { const buf = await f.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array' }); await openSheetPicker(wb, name); }
+          showToast('Файл загружен', 'success');
+        } catch (err) { showToast('Ошибка загрузки файла: ' + err.message, 'error'); } finally { hideLoading(); }
+      });
+    }
+
+    // Integrate sheet picker into openExcelDialog as well
+    async function openExcelDialog() {
+      try {
+        showLoading();
+        const file = await window.electronAPI.openFile();
+        if (!file) return;
+        if (file.ext === 'csv') { const csvText = atob(file.data); const wb = XLSX.read(csvText, { type: 'string' }); await openSheetPicker(wb, file.name); }
+        else { const wb = XLSX.read(file.data, { type: 'base64' }); await openSheetPicker(wb, file.name); }
+        document.querySelector('[data-tab="unit-economics"]').click();
+      } catch (err) { showToast('Ошибка чтения файла: ' + err.message, 'error'); }
+      finally { hideLoading(); }
     }
 
     // Datasets UI
@@ -849,28 +943,6 @@
     }
 
     // Excel open via dialog
-    async function openExcelDialog() {
-      try {
-        showLoading();
-        const file = await window.electronAPI.openFile();
-        if (!file) return;
-        let rows = [];
-        if (file.ext === 'csv') {
-          const csvText = atob(file.data);
-          const wb = XLSX.read(csvText, { type: 'string' });
-          rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
-        } else {
-          const wb = XLSX.read(file.data, { type: 'base64' });
-          rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
-        }
-        currentData = rows;
-        const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${file.name}» загружен: ${rows.length || 0} строк.`;
-        showToast('Файл Excel загружен', 'success');
-        document.querySelector('[data-tab="unit-economics"]').click();
-      } catch (err) { showToast('Ошибка чтения файла: ' + err.message, 'error'); }
-      finally { hideLoading(); }
-    }
-    // Optional: bind command palette entry already exists; add keyboard shortcut for quick import
     document.addEventListener('keydown', (e)=>{ if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='i') { e.preventDefault(); openExcelDialog(); } });
   </script>
 </body>
