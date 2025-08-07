@@ -73,6 +73,11 @@
     .nav-item i { font-size: 20px; width: 28px; text-align: center; }
 
     .main-content { margin-left: var(--sidebar-width); flex: 1; padding: 30px; background-color: var(--bg-primary); transition: var(--transition); }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .card { background: var(--bg-secondary); border:1px solid var(--border); border-radius: 12px; box-shadow: var(--card-shadow); }
+    .section { padding: 16px; }
+    .section-title { font-weight: 600; margin-bottom: 12px; }
+    .input { background: var(--bg-tertiary); color: var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:8px 10px; }
 
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
     .page-title { font-size: 28px; font-weight: 600; background: linear-gradient(90deg, var(--text-primary), var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
@@ -141,7 +146,7 @@
       </div>
       <div class="nav-section">
         <div class="nav-section-title"><i class="ti ti-settings"></i> Настройки</div>
-        <div class="nav-item" data-tab="settings">
+        <div class="nav-item" id="openSettingsNav">
           <i class="ti ti-settings"></i>
           <span>Настройки</span>
         </div>
@@ -151,6 +156,7 @@
 
   <div class="main-content">
     <div class="tab-content active" id="dashboard">
+      <div class="container">
       <div class="header">
         <h1 class="page-title">Панель управления</h1>
         <div class="user-profile" id="openSettings">
@@ -161,13 +167,15 @@
         <div class="greeting" id="greetingText">Добро пожаловать!</div>
         <p class="subtext" id="subtext">Принимайте решения на основе точной аналитики и прогнозов.</p>
       </div>
+      </div>
     </div>
 
     <div class="tab-content" id="unit-economics">
+      <div class="container">
       <div class="header">
         <h1 class="page-title">Юнит-экономика</h1>
       </div>
-      <div class="file-upload" id="fileUploadArea">
+      <div class="file-upload card section" id="fileUploadArea">
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap: wrap; margin-bottom: 8px;">
           <button class="btn" id="selectFileBtn">Выбрать файл</button>
           <button class="btn" id="openDirBtn">Открыть папку с файлами</button>
@@ -178,82 +186,57 @@
         <small>Поддерживаемые форматы: XLSX, CSV, XLS. Или выберите папку с файлами ниже.</small>
       </div>
       <div id="fileSummary" style="color: var(--text-secondary);"></div>
+      </div>
     </div>
 
     <div class="tab-content" id="datasets">
+      <div class="container">
       <div class="header">
         <h1 class="page-title">Данные</h1>
         <div>
           <button class="btn" id="saveDatasetBtn">Сохранить текущий набор</button>
         </div>
       </div>
-      <div id="datasetsContent">
+      <div id="datasetsContent" class="card section">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 8px;">
           <div id="datasetsListTitle" style="font-weight:600;">Наборы данных</div>
-          <input id="datasetsSearch" placeholder="Поиск..." style="background: var(--bg-tertiary); color: var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:8px 10px;" />
+          <input id="datasetsSearch" placeholder="Поиск..." class="input" />
         </div>
         <div id="datasetsList" style="margin-bottom:16px;"></div>
         <div id="datasetPreview"></div>
       </div>
+      </div>
     </div>
 
     <div class="tab-content" id="reports">
+      <div class="container">
       <div class="header">
         <h1 class="page-title">Отчёты</h1>
         <div style="display:flex; gap:8px; align-items:center;">
-          <select id="reportDatasetSelect" style="background: var(--bg-tertiary); color: var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:8px 10px;"></select>
+          <select id="reportDatasetSelect" class="input"></select>
           <button class="btn" id="runReportBtn">Сгенерировать</button>
           <button class="btn" id="exportCsvBtn">Экспорт CSV</button>
           <button class="btn" id="exportXlsxBtn">Экспорт XLSX</button>
         </div>
       </div>
       <div style="display:flex; gap:16px; align-items:flex-start;">
-        <div id="reportsGallery" style="flex:0 0 360px;"></div>
+        <div id="reportsGallery" class="card section" style="flex:0 0 360px;"></div>
         <div style="flex:1; display:flex; flex-direction:column; gap:12px;">
-          <div id="mappingPanel" style="border:1px solid var(--border); border-radius:10px; padding:12px; background: var(--bg-secondary); display:none;">
+          <div id="mappingPanel" class="card section" style="display:none;">
             <div style="font-weight:600; margin-bottom:8px;">Маппинг полей</div>
-            <div id="mappingFields" style="display:grid; grid-template-columns: 240px 1fr; gap:8px;"></div>
+            <div id="mappingFields" style="display:grid; grid-template-columns: 260px 1fr; gap:8px;"></div>
             <div style="margin-top:8px; display:flex; gap:8px;">
               <button class="btn" id="autoMapBtn">Автосопоставление</button>
               <button class="btn" id="saveMappingBtn">Сохранить маппинг</button>
             </div>
           </div>
-          <div id="reportResult" style="flex:1;"></div>
+          <div id="reportResult" class="card section" style="flex:1;"></div>
         </div>
+      </div>
       </div>
     </div>
 
-    <div class="tab-content" id="settings">
-      <div class="header">
-        <h1 class="page-title">Настройки</h1>
-      </div>
-      <div class="settings-form">
-        <div class="form-group">
-          <label>Имя пользователя</label>
-          <input type="text" id="userNamePage" placeholder="Введите имя" />
-        </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="userEmailPage" placeholder="Введите email" />
-        </div>
-        <div class="form-group">
-          <label>Тема</label>
-          <div style="display: flex; gap: 10px; margin-top: 6px;">
-            <button type="button" data-theme="dark" class="btn" style="padding: 6px 12px; font-size: 12px;">Тёмная</button>
-            <button type="button" data-theme="light" class="btn" style="padding: 6px 12px; font-size: 12px;">Светлая</button>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Цвет акцента</label>
-          <div class="color-picker">
-            <input type="color" id="colorPickerPage" value="#2a7fff" />
-            <div class="color-preview" id="colorPreviewPage"></div>
-            <span id="colorValuePage">#2a7fff</span>
-          </div>
-        </div>
-        <button class="btn" id="saveSettingsPage" style="margin-top: 20px;">Сохранить</button>
-      </div>
-    </div>
+    <!-- Settings tab removed; using modal only -->
   </div>
 
   <div class="modal" id="settingsModal">
@@ -368,14 +351,15 @@
 
     const settingsModal = document.getElementById('settingsModal');
     const openSettings = document.getElementById('openSettings');
+    const openSettingsNav = document.getElementById('openSettingsNav');
     const closeSettings = document.getElementById('closeSettings');
     const cancelSettings = document.getElementById('cancelSettings');
 
-    [openSettings, closeSettings, cancelSettings].forEach(el => {
+    [openSettings, openSettingsNav, closeSettings, cancelSettings].forEach(el => {
       if (!el) return;
       el.addEventListener('click', () => {
         const shouldOpen = (el === openSettings);
-        settingsModal.classList.toggle('active', shouldOpen);
+        settingsModal.classList.toggle('active', shouldOpen || el === openSettingsNav);
       });
     });
 
@@ -406,7 +390,6 @@
       showToast('Настройки сохранены', 'success');
     }
 
-    const savePageBtn = document.getElementById('saveSettingsPage'); if (savePageBtn) savePageBtn.addEventListener('click', () => saveSettingsFrom('Page'));
     const saveModalBtn = document.getElementById('saveSettingsModal'); if (saveModalBtn) saveModalBtn.addEventListener('click', () => saveSettingsFrom('Modal'));
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -417,13 +400,12 @@
         const savedColor = await window.electronAPI.getSetting('accentColor');
         if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
         if (savedColor) applyAccent(savedColor);
-        const setIfExists = (id, val) => { const el = document.getElementById(id); if (el && typeof el.value !== 'undefined') el.value = val; };
         const setBgIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.style.backgroundColor = val; };
         const setTextIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        if (savedUserName) { setIfExists('userNamePage', savedUserName); setIfExists('userNameModal', savedUserName); const avatar = document.querySelector('.user-avatar'); if (avatar) avatar.textContent = savedUserName[0].toUpperCase(); const greeting = document.getElementById('greetingText'); if (greeting) greeting.textContent = `Добро пожаловать, ${savedUserName}!`; }
-        if (savedUserEmail) { setIfExists('userEmailPage', savedUserEmail); setIfExists('userEmailModal', savedUserEmail); }
-        const color = savedColor || '#2a7fff'; ['Page', 'Modal'].forEach(prefix => { setIfExists(`colorPicker${prefix}`, color); setBgIfExists(`colorPreview${prefix}`, color); setTextIfExists(`colorValue${prefix}`, color); });
-        bindColorPicker('Page'); bindColorPicker('Modal');
+        if (savedUserName) { setTextIfExists('userNamePage', savedUserName); setTextIfExists('userNameModal', savedUserName); const avatar = document.querySelector('.user-avatar'); if (avatar) avatar.textContent = savedUserName[0].toUpperCase(); const greeting = document.getElementById('greetingText'); if (greeting) greeting.textContent = `Добро пожаловать, ${savedUserName}!`; }
+        if (savedUserEmail) { setTextIfExists('userEmailPage', savedUserEmail); setTextIfExists('userEmailModal', savedUserEmail); }
+        const color = savedColor || '#2a7fff'; ['Page', 'Modal'].forEach(prefix => { setTextIfExists(`colorValue${prefix}`, color); setBgIfExists(`colorPreview${prefix}`, color); });
+        bindColorPicker('Modal');
       } catch {}
     });
 
@@ -562,16 +544,30 @@
           <div style="color:var(--text-secondary); font-size:13px;">${r.description}</div>
         </div>
       `).join('');
-      gallery.querySelectorAll('[data-report-id]').forEach(card => { card.addEventListener('click', async () => { selectedReportId = card.getAttribute('data-report-id'); gallery.querySelectorAll('[data-report-id]').forEach(c => c.style.outline = 'none'); card.style.outline = '2px solid var(--accent-blue)'; updateMappingPanelVisibility(); await loadExistingMapping(); }); });
+      gallery.querySelectorAll('[data-report-id]').forEach(card => { card.addEventListener('click', async () => { selectedReportId = card.getAttribute('data-report-id'); gallery.querySelectorAll('[data-report-id]').forEach(c => c.style.outline = 'none'); card.style.outline = '2px solid var(--accent-blue)'; await updateMappingPanel(); await loadExistingMapping(); }); });
 
-      const select = document.getElementById('reportDatasetSelect'); const items = await window.electronAPI.datasets.list(); select.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.rowsCount})</option>`).join(''); updateMappingPanelVisibility();
-      select.addEventListener('change', async () => { await loadExistingMapping(); });
+      const select = document.getElementById('reportDatasetSelect'); const items = await window.electronAPI.datasets.list(); select.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.rowsCount})</option>`).join('');
+      await updateMappingPanel();
+      select.addEventListener('change', async () => { await updateMappingPanel(); await loadExistingMapping(); });
     }
 
-    function updateMappingPanelVisibility() {
+    async function getAvailableFieldsForSelectedDataset() {
+      const select = document.getElementById('reportDatasetSelect'); const datasetId = select.value;
+      const data = await window.electronAPI.datasets.get(datasetId);
+      const rows = data?.rows || [];
+      return Array.from(new Set(rows.flatMap(r => Object.keys(r))));
+    }
+
+    async function updateMappingPanel() {
       const report = reportsRegistry.find(r => r.id === selectedReportId); const panel = document.getElementById('mappingPanel'); const fieldsWrap = document.getElementById('mappingFields'); if (!report) return;
-      if (report.requiredFields && report.requiredFields.length > 0) { panel.style.display = 'block'; fieldsWrap.innerHTML = report.requiredFields.map(f => ` <div style="color:var(--text-secondary)">${f}</div> <input data-map-key="${f}" placeholder="выберите колонку" style="background: var(--bg-tertiary); color: var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:8px 10px;" />`).join(''); }
-      else { panel.style.display = 'none'; fieldsWrap.innerHTML = ''; }
+      if (report.requiredFields && report.requiredFields.length > 0) {
+        panel.style.display = 'block';
+        const availableFields = await getAvailableFieldsForSelectedDataset();
+        fieldsWrap.innerHTML = report.requiredFields.map(f => {
+          const opts = ['<option value="">— выберите колонку —</option>'].concat(availableFields.map(v => `<option value="${v}">${v}</option>`)).join('');
+          return `<div style=\"color:var(--text-secondary)\">${f}</div><select data-map-key=\"${f}\" class=\"input\">${opts}</select>`;
+        }).join('');
+      } else { panel.style.display = 'none'; fieldsWrap.innerHTML = ''; }
     }
 
     async function loadExistingMapping() {
@@ -581,7 +577,7 @@
 
     function autoMapColumns(availableFields) {
       const synonyms = { price: ['price','цена','Стоимость продажи','Продажа'], cost: ['cost','себестоимость','Закуп','Закупка'], commission: ['commission','комиссия'], logistics: ['logistics','логистика','доставка','тариф доставки'] };
-      document.querySelectorAll('[data-map-key]')?.forEach(input => { const key = input.getAttribute('data-map-key'); const candidates = (synonyms[key] || []).map(s => s.toLowerCase()); const match = availableFields.find(f => candidates.includes(f.toLowerCase())) || availableFields.find(f => f.toLowerCase() === key); if (match) input.value = match; });
+      document.querySelectorAll('[data-map-key]')?.forEach(sel => { const key = sel.getAttribute('data-map-key'); const candidates = (synonyms[key] || []).map(s => s.toLowerCase()); const match = availableFields.find(f => candidates.includes(f.toLowerCase())) || availableFields.find(f => f.toLowerCase() === key); if (match) sel.value = match; });
     }
 
     async function runSelectedReport() {
@@ -590,7 +586,7 @@
       showLoading();
       try {
         const data = await window.electronAPI.datasets.get(datasetId); const rows = data?.rows || [];
-        let mapping = {}; if (report.requiredFields && report.requiredFields.length > 0) { document.querySelectorAll('[data-map-key]')?.forEach(input => { const key = input.getAttribute('data-map-key'); if (input.value) mapping[key] = input.value; }); }
+        let mapping = {}; if (report.requiredFields && report.requiredFields.length > 0) { document.querySelectorAll('[data-map-key]')?.forEach(sel => { const key = sel.getAttribute('data-map-key'); if (sel.value) mapping[key] = sel.value; }); }
         const result = report.compute(rows, mapping);
         currentReportRows = result.rows || [];
         const resultEl = document.getElementById('reportResult');
@@ -628,8 +624,8 @@
 
     const reportsTabBtn = document.querySelector('[data-tab="reports"]'); if (reportsTabBtn) { reportsTabBtn.addEventListener('click', async () => { await renderReports(); await loadExistingMapping(); }); }
 
-    document.getElementById('autoMapBtn').addEventListener('click', async () => { const select = document.getElementById('reportDatasetSelect'); const datasetId = select.value; const data = await window.electronAPI.datasets.get(datasetId); const fields = Array.from(new Set((data?.rows || []).flatMap(r => Object.keys(r)))); autoMapColumns(fields); });
-    document.getElementById('saveMappingBtn').addEventListener('click', async () => { const select = document.getElementById('reportDatasetSelect'); const datasetId = select.value; const mapping = {}; document.querySelectorAll('[data-map-key]')?.forEach(input => { const key = input.getAttribute('data-map-key'); if (input.value) mapping[key] = input.value; }); await window.electronAPI.mappings.set(datasetId, selectedReportId, mapping); showToast('Маппинг сохранён', 'success'); });
+    document.getElementById('autoMapBtn').addEventListener('click', async () => { const fields = await getAvailableFieldsForSelectedDataset(); autoMapColumns(fields); });
+    document.getElementById('saveMappingBtn').addEventListener('click', async () => { const select = document.getElementById('reportDatasetSelect'); const datasetId = select.value; const mapping = {}; document.querySelectorAll('[data-map-key]')?.forEach(sel => { const key = sel.getAttribute('data-map-key'); if (sel.value) mapping[key] = sel.value; }); await window.electronAPI.mappings.set(datasetId, selectedReportId, mapping); showToast('Маппинг сохранён', 'success'); });
   </script>
 </body>
 </html>
