@@ -1,0 +1,8 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  getSetting: (key) => ipcRenderer.invoke('settings:get', key),
+  setSetting: (key, value) => ipcRenderer.invoke('settings:set', key, value),
+  openFile: () => ipcRenderer.invoke('files:openFile'),
+  openDirectory: () => ipcRenderer.invoke('files:openDirectory'),
+});
