@@ -81,54 +81,17 @@
     .glass { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); backdrop-filter: blur(10px); }
     .btn:hover { filter: saturate(1.2) brightness(1.05); transform: translateY(-1px); }
     .btn:active { transform: translateY(0); filter: saturate(1); }
-
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-    .page-title { font-size: 28px; font-weight: 600; background: linear-gradient(90deg, var(--text-primary), var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-
-    .user-profile { display: flex; align-items: center; gap: 12px; background-color: var(--bg-tertiary); padding: 8px 14px; border-radius: 10px; cursor: pointer; }
-    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent-blue), #1c6ed1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; box-shadow: var(--glow); }
-
-    .tab-content { display: none; animation: fadeIn 0.4s ease-out; height: calc(100vh - 140px); overflow-y: auto; padding-right: 10px; }
-    .tab-content::-webkit-scrollbar { width: 6px; }
-    .tab-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    .tab-content.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-
-    .dashboard-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-secondary); padding: 0 20px; }
-    .greeting { font-size: 24px; font-weight: 500; margin-bottom: 16px; color: var(--text-primary); background: linear-gradient(90deg, var(--text-primary), var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .subtext { color: var(--text-tertiary); max-width: 500px; }
-
-    .file-upload { border: 2px dashed var(--border); padding: 40px 20px; border-radius: var(--radius-lg); text-align: center; margin-bottom: 24px; background: rgba(42, 127, 255, 0.03); cursor: pointer; transition: border-color .2s; }
-    .file-upload-icon { font-size: 40px; color: var(--accent-blue); margin-bottom: 12px; }
-    .file-upload p { color: var(--text-secondary); margin: 8px 0; }
-
-    .btn { padding: 12px 20px; background: linear-gradient(135deg, var(--accent-blue), var(--accent-hover)); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: 500; transition: var(--transition); font-size: 14px; display: inline-flex; align-items: center; gap: 8px; box-shadow: var(--glow); }
-
-    /* Toasts */
-    .toast-root { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 2000; }
-    .toast { padding: 10px 12px; border-radius: 8px; color: #fff; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transform: translateY(8px); animation: toastIn .2s forwards; }
-    .toast.info { background: #3b82f6; }
-    .toast.success { background: var(--success); }
-    .toast.error { background: var(--error); }
-    @keyframes toastIn { to { opacity: 1; transform: translateY(0); } }
-
-    /* Loader overlay */
-    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 1500; }
-    .overlay.active { display: flex; }
-    .spinner { width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Drawer (Settings) */
-    .modal { position: fixed; inset: 0; display: none; z-index: 1200; background-color: rgba(0, 0, 0, 0.45); }
-    .modal.active { display: block; }
-    .modal-content { position: absolute; right: 0; top: 0; height: 100vh; width: 420px; max-width: 90%; background-color: rgba(22, 26, 35, 0.86); backdrop-filter: blur(12px); border-left: 1px solid var(--border); box-shadow: -12px 0 24px rgba(0,0,0,0.3); transform: translateX(100%); transition: transform 200ms ease; }
-    .modal.active .modal-content { transform: translateX(0); }
-    .modal-header { padding: 20px; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .modal-title { font-size: 18px; font-weight: 600; }
-    .modal-close { background: none; border: none; font-size: 20px; color: var(--text-secondary); cursor: pointer; }
-    .modal-close:hover { color: var(--accent-blue); }
-    .modal-body { padding: 20px; }
-    .modal-footer { padding: 16px 20px; background: linear-gradient(0deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+    .topbar { position: sticky; top: 0; z-index: 5; margin-bottom: 16px; background: var(--bg-primary); }
+    .topbar-inner { display:flex; align-items:center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .breadcrumbs { color: var(--text-tertiary); font-size: 12px; }
+    .kpi-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .kpi-card { padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); }
+    .kpi-label { color: var(--text-tertiary); font-size: 12px; }
+    .kpi-value { font-size: 20px; font-weight: 600; margin-top: 6px; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    .table th { position: sticky; top: 0; background: var(--bg-secondary); z-index: 1; }
+    .table tr:hover td { background: rgba(255,255,255,0.02); }
   </style>
 </head>
 <body>
@@ -170,6 +133,15 @@
   </div>
 
   <div class="main-content">
+    <div class="topbar">
+      <div class="container topbar-inner">
+        <div class="breadcrumbs">AI‑Smart / <span id="crumb">Панель</span></div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input class="input" id="globalSearch" placeholder="Поиск..."/>
+          <button class="btn" id="openCmdPal" title="Командная палитра (Ctrl/Cmd+K)"><i class="ti ti-command"></i></button>
+        </div>
+      </div>
+    </div>
     <div class="tab-content active" id="dashboard">
       <div class="container">
       <div class="header">
@@ -212,12 +184,27 @@
           <button class="btn" id="saveDatasetBtn">Сохранить текущий набор</button>
         </div>
       </div>
+      <div id="datasetsImportPanel" class="card section glass" style="margin-bottom:12px;">
+        <div class="section-title">Импорт данных</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button class="btn" id="dsSelectFileBtn"><i class="ti ti-upload"></i> Выбрать файл</button>
+          <button class="btn" id="dsOpenDirBtn"><i class="ti ti-folder"></i> Открыть папку</button>
+          <input type="file" id="dsFileInput" accept=".xlsx,.xls,.csv" style="display:none" />
+          <span id="dsImportSummary" style="color:var(--text-secondary)"></span>
+        </div>
+        <div id="dsDropArea" style="margin-top:8px; border:1px dashed var(--border); border-radius:10px; padding:12px; text-align:center; color:var(--text-secondary)">Перетащите файлы сюда для импорта</div>
+      </div>
       <div id="datasetsContent" class="card section">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 8px;">
           <div id="datasetsListTitle" style="font-weight:600;">Наборы данных</div>
           <input id="datasetsSearch" placeholder="Поиск..." class="input" />
         </div>
-        <div id="datasetsList" style="margin-bottom:16px;"></div>
+        <div id="datasetsList" style="margin-bottom:16px; overflow:auto; border:1px solid var(--border); border-radius:10px;">
+          <table class="table" id="datasetsTable">
+            <thead><tr><th>Имя набора</th><th>Дата</th><th>Строк</th><th style="width:160px">Действия</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
         <div id="datasetPreview"></div>
       </div>
       </div>
@@ -237,6 +224,7 @@
       <div style="display:flex; gap:16px; align-items:flex-start;">
         <div id="reportsGallery" class="card section glass" style="flex:0 0 360px;"></div>
         <div style="flex:1; display:flex; flex-direction:column; gap:12px;">
+          <div id="reportKPI" class="kpi-grid" style="display:none;"></div>
           <div id="mappingPanel" class="card section glass" style="display:none;">
             <div style="font-weight:600; margin-bottom:8px;">Маппинг полей</div>
             <div id="mappingFields" style="display:grid; grid-template-columns: 260px 1fr; gap:8px;"></div>
@@ -320,6 +308,9 @@
         document.getElementById(item.dataset.tab).classList.add('active');
         // Ensure settings drawer is closed when switching tabs
         settingsModal.classList.remove('active');
+        // Update breadcrumb
+        const crumbMap = { 'dashboard':'Панель', 'datasets':'Данные', 'reports':'Отчёты', 'unit-economics':'Юнит-экономика' };
+        const crumbEl = document.getElementById('crumb'); if (crumbEl) crumbEl.textContent = crumbMap[item.dataset.tab] || 'Панель';
       });
     });
 
@@ -494,32 +485,16 @@
 
     // Datasets UI
     async function renderDatasets() {
-      const listEl = document.getElementById('datasetsList'); const prevEl = document.getElementById('datasetPreview'); const q = (document.getElementById('datasetsSearch')?.value || '').trim().toLowerCase();
-      if (!listEl || !prevEl) return;
+      const table = document.getElementById('datasetsTable'); const tbody = table?.querySelector('tbody'); const prevEl = document.getElementById('datasetPreview'); const q = (document.getElementById('datasetsSearch')?.value || '').trim().toLowerCase();
+      if (!tbody || !prevEl) return;
       let items = await window.electronAPI.datasets.list();
       if (q) items = items.filter(i => i.name.toLowerCase().includes(q));
-      if (!items || items.length === 0) { listEl.innerHTML = '<div style="color:var(--text-secondary)">Нет сохранённых наборов данных</div>'; prevEl.innerHTML = ''; return; }
-      listEl.innerHTML = items.map(i => `
-        <div data-id="${i.id}" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px; background:var(--bg-secondary)">
-          <div style="display:flex; gap:12px; align-items:center;">
-            <i class="ti ti-database"></i>
-            <div>
-              <div style="font-weight:600;">${i.name}</div>
-              <div style="color:var(--text-secondary); font-size:12px;">${new Date(i.createdAt).toLocaleString()} • ${i.rowsCount} строк</div>
-            </div>
-          </div>
-          <div style="display:flex; gap:8px;">
-            <button class="btn" data-action="preview">Предпросмотр</button>
-            <button class="btn" data-action="rename">Переименовать</button>
-            <button class="btn" data-action="delete" style="background:var(--error)">Удалить</button>
-          </div>
-        </div>
-      `).join('');
-
-      listEl.querySelectorAll('[data-action]')?.forEach(btn => {
+      if (!items || items.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-secondary)">Нет сохранённых наборов данных</td></tr>'; prevEl.innerHTML=''; return; }
+      tbody.innerHTML = items.map(i => `<tr data-id="${i.id}"><td>${i.name}</td><td>${new Date(i.createdAt).toLocaleString()}</td><td>${i.rowsCount}</td><td><div style=\"display:flex; gap:6px;\"><button class=\"btn\" data-action=\"preview\">Предпросмотр</button><button class=\"btn\" data-action=\"rename\">Переименовать</button><button class=\"btn\" data-action=\"delete\" style=\"background:var(--error)\">Удалить</button></div></td></tr>`).join('');
+      tbody.querySelectorAll('[data-action]')?.forEach(btn => {
         btn.addEventListener('click', async () => {
-          const card = btn.closest('[data-id]'); const id = card.getAttribute('data-id'); const action = btn.getAttribute('data-action');
-          if (action === 'preview') { const data = await window.electronAPI.datasets.get(id); const rows = data?.rows || []; prevEl.innerHTML = renderTable(rows.slice(0, 50)); }
+          const row = btn.closest('tr'); const id = row.getAttribute('data-id'); const action = btn.getAttribute('data-action');
+          if (action === 'preview') { const data = await window.electronAPI.datasets.get(id); const rows = data?.rows || []; prevEl.innerHTML = renderTable(rows.slice(0, 100)); }
           else if (action === 'rename') { const newName = prompt('Новое имя набора:'); if (!newName) return; await window.electronAPI.datasets.rename(id, newName); showToast('Набор переименован', 'success'); renderDatasets(); }
           else if (action === 'delete') { if (!confirm('Удалить набор данных?')) return; await window.electronAPI.datasets.delete(id); showToast('Набор удалён', 'success'); renderDatasets(); }
         });
@@ -548,6 +523,29 @@
 
     document.querySelector('[data-tab="datasets"]').addEventListener('click', () => { setTimeout(renderDatasets, 0); });
     const datasetsSearch = document.getElementById('datasetsSearch'); if (datasetsSearch) datasetsSearch.addEventListener('input', () => renderDatasets());
+    // Datasets import handlers (panel)
+    (function(){
+      const dsSelectFileBtn = document.getElementById('dsSelectFileBtn');
+      const dsOpenDirBtn = document.getElementById('dsOpenDirBtn');
+      const dsFileInput = document.getElementById('dsFileInput');
+      const dsDropArea = document.getElementById('dsDropArea');
+      const dsImportSummary = document.getElementById('dsImportSummary');
+      if (dsSelectFileBtn && dsFileInput) {
+        dsSelectFileBtn.addEventListener('click', (e)=>{ e.preventDefault(); dsFileInput.click(); });
+        dsFileInput.addEventListener('change', async (e)=>{
+          const f = e.target.files?.[0]; if (!f) return; showLoading();
+          try { const name = f.name; const ext = name.split('.').pop().toLowerCase(); if (ext==='csv'){ const text=await f.text(); const wb=XLSX.read(text,{type:'string'}); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:null}); } else { const buf=await f.arrayBuffer(); const wb=XLSX.read(buf,{type:'array'}); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:null}); } dsImportSummary.textContent = `Файл «${name}» загружен: ${currentData.length||0} строк.`; showToast('Файл загружен','success'); } catch(err){ showToast('Ошибка импорта','error'); } finally { hideLoading(); dsFileInput.value=''; }
+        });
+      }
+      if (dsOpenDirBtn) {
+        dsOpenDirBtn.addEventListener('click', async ()=>{ showLoading(); try { const files=await window.electronAPI.openDirectory(); if (!files||!files.length) return; let totalRows=0, totalFiles=0; files.forEach(f=>{ let wb; if (f.ext==='csv'){ const csvText=atob(f.data); wb=XLSX.read(csvText,{type:'string'});} else { wb=XLSX.read(f.data,{type:'base64'});} const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:null}); totalFiles++; totalRows+=rows.length; }); currentData = { filesCount: totalFiles, rowsCount: totalRows }; dsImportSummary.textContent = `Загружено файлов: ${totalFiles}, суммарно строк: ${totalRows}.`; showToast('Файлы загружены','success'); } catch(err){ showToast('Ошибка импорта','error'); } finally { hideLoading(); } });
+      }
+      if (dsDropArea) {
+        ['dragenter','dragover'].forEach(ev=>dsDropArea.addEventListener(ev,(e)=>{ e.preventDefault(); dsDropArea.style.borderColor='var(--accent-blue)'; }));
+        ;['dragleave','drop'].forEach(ev=>dsDropArea.addEventListener(ev,(e)=>{ e.preventDefault(); dsDropArea.style.borderColor='var(--border)'; }));
+        dsDropArea.addEventListener('drop', async (e)=>{ const f=e.dataTransfer.files?.[0]; if(!f) return; showLoading(); try { const name=f.name; const ext=name.split('.').pop().toLowerCase(); if (ext==='csv'){ const text=await f.text(); const wb=XLSX.read(text,{type:'string'}); currentData=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:null}); } else { const buf=await f.arrayBuffer(); const wb=XLSX.read(buf,{type:'array'}); currentData=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:null}); } dsImportSummary.textContent=`Файл «${name}» загружен: ${currentData.length||0} строк.`; showToast('Файл загружен','success'); } catch(err){ showToast('Ошибка импорта','error'); } finally { hideLoading(); } });
+      }
+    })();
 
     // Reports
     const reportsRegistry = [
@@ -610,9 +608,26 @@
         let mapping = {}; if (report.requiredFields && report.requiredFields.length > 0) { document.querySelectorAll('[data-map-key]')?.forEach(sel => { const key = sel.getAttribute('data-map-key'); if (sel.value) mapping[key] = sel.value; }); }
         const result = report.compute(rows, mapping);
         currentReportRows = result.rows || [];
-        const resultEl = document.getElementById('reportResult');
+        const resultEl = document.getElementById('reportResult'); const kpiEl = document.getElementById('reportKPI');
         const summaryBlock = result.summary ? `<div style="margin-bottom:12px; color:var(--text-secondary)">Строк: ${result.summary.rowsCount}, Полей: ${result.summary.columnsCount}</div>` : '';
         resultEl.innerHTML = `${summaryBlock}${renderTable(currentReportRows.slice(0, 1000))}`;
+        // KPI header (simple)
+        const kpis = [];
+        if (report.id === 'unit-mock') {
+          const n = currentReportRows.length || 1;
+          const avgMargin = (currentReportRows.reduce((a,c)=>a+(Number(c.margin)||0),0)/n)||0;
+          const avgPct = (currentReportRows.reduce((a,c)=>a+(Number(c.marginPct)||0),0)/n)||0;
+          kpis.push({ label:'Записей', value:n });
+          kpis.push({ label:'Средняя маржа', value: avgMargin.toFixed(0) });
+          kpis.push({ label:'Маржа, %', value: avgPct.toFixed(2)+'%' });
+        } else if (result.summary) {
+          kpis.push({ label:'Строк', value: result.summary.rowsCount });
+          kpis.push({ label:'Полей', value: result.summary.columnsCount });
+        }
+        if (kpis.length) {
+          kpiEl.style.display='grid';
+          kpiEl.innerHTML = kpis.map(k=>`<div class="kpi-card glass"><div class="kpi-label">${k.label}</div><div class="kpi-value">${k.value}</div></div>`).join('');
+        } else { kpiEl.style.display='none'; kpiEl.innerHTML=''; }
         renderChartIfApplicable(resultEl, currentReportRows);
         showToast('Отчёт готов', 'success');
       } catch (e) { showToast('Ошибка генерации отчёта', 'error'); } finally { hideLoading(); }
