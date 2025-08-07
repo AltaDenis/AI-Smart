@@ -81,6 +81,10 @@
     .glass { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); backdrop-filter: blur(10px); }
     .btn:hover { filter: saturate(1.2) brightness(1.05); transform: translateY(-1px); }
     .btn:active { transform: translateY(0); filter: saturate(1); }
+    .btn-secondary { background: transparent; color: var(--text-primary); border:1px solid var(--border); box-shadow: none; }
+    .btn-secondary:hover { background: rgba(255,255,255,0.04); }
+    .icon-btn { width: 36px; height: 36px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; border:1px solid var(--border); background: transparent; color: var(--text-primary); cursor:pointer; }
+    .icon-btn:hover { background: rgba(255,255,255,0.05); }
     /* topbar removed */
     .kpi-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
     .kpi-card { padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); }
@@ -161,7 +165,7 @@
       <div class="file-upload card section" id="fileUploadArea">
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap: wrap; margin-bottom: 8px;">
           <button class="btn" id="selectFileBtn">Выбрать файл</button>
-          <button class="btn" id="openDirBtn">Открыть папку с файлами</button>
+          <button class="btn btn-secondary" id="openDirBtn">Открыть папку</button>
         </div>
         <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" />
         <i class="ti ti-upload file-upload-icon"></i>
@@ -509,7 +513,7 @@
       let items = await window.electronAPI.datasets.list();
       if (q) items = items.filter(i => i.name.toLowerCase().includes(q));
       if (!items || items.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-secondary)">Нет сохранённых наборов данных</td></tr>'; prevEl.innerHTML=''; return; }
-      tbody.innerHTML = items.map(i => `<tr data-id="${i.id}"><td>${i.name}</td><td>${new Date(i.createdAt).toLocaleString()}</td><td>${i.rowsCount}</td><td><div style=\"display:flex; gap:6px;\"><button class=\"btn\" data-action=\"preview\">Предпросмотр</button><button class=\"btn\" data-action=\"rename\">Переименовать</button><button class=\"btn\" data-action=\"delete\" style=\"background:var(--error)\">Удалить</button></div></td></tr>`).join('');
+      tbody.innerHTML = items.map(i => `<tr data-id="${i.id}"><td>${i.name}</td><td>${new Date(i.createdAt).toLocaleString()}</td><td>${i.rowsCount}</td><td><div style=\"display:flex; gap:6px;\"><button class=\"icon-btn\" title=\"Предпросмотр\" data-action=\"preview\"><i class=\"ti ti-eye\"></i></button><button class=\"icon-btn\" title=\"Переименовать\" data-action=\"rename\"><i class=\"ti ti-pencil\"></i></button><button class=\"icon-btn\" title=\"Удалить\" data-action=\"delete\" style=\"border-color:#3b1f1f; color:#ff6b6b\"><i class=\"ti ti-trash\"></i></button></div></td></tr>`).join('');
       tbody.querySelectorAll('[data-action]')?.forEach(btn => {
         btn.addEventListener('click', async () => {
           const row = btn.closest('tr'); const id = row.getAttribute('data-id'); const action = btn.getAttribute('data-action');
