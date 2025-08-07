@@ -718,7 +718,7 @@
           await loadBuiltInTariffs();
           const files = await window.electronAPI.openDirectory();
           if (!files || files.length === 0) return;
-          let created = 0; const logs = [];
+          let created = 0; const logs = []; let lastCatalogId = null;
           for (const f of files) {
             try {
               let rows = [];
@@ -728,13 +728,29 @@
                 rows = (parsed.sheets.find(s=>s.name===bestName)?.rows) || [];
               }
               const cls = classifyDataset(rows, bestName);
-              await window.electronAPI.datasets.create(`${f.name} [${bestName}]`, rows, { from: 'dir', type: cls.type });
+              const createdItem = await window.electronAPI.datasets.create(`${f.name} [${bestName}]`, rows, { from: 'dir', type: cls.type });
+              if (cls.type === 'catalog' && createdItem?.id) lastCatalogId = createdItem.id;
               created += 1; logs.push(`${f.name}✓`);
             } catch (err) { logs.push(`${f.name}✗`); }
           }
           showToast(`Импортировано наборов: ${created}`, 'success');
           const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Импорт завершён. ${created} наборов. ${logs.slice(0,6).join(', ')}${logs.length>6?'…':''}`;
           renderDatasets();
+          if (lastCatalogId) {
+            const reportsBtn = document.querySelector('[data-tab="reports"]');
+            if (reportsBtn) {
+              reportsBtn.click();
+              setTimeout(async ()=>{
+                try {
+                  await renderReports(); await loadExistingMapping();
+                  const dsSel = document.getElementById('reportDatasetSelect'); if (dsSel) { dsSel.value = lastCatalogId; dsSel.dispatchEvent(new Event('change')); }
+                  selectedReportId = 'unit-economics-v1'; await updateMappingPanel();
+                  try { const fields = await getAvailableFieldsForSelectedDataset(); autoMapColumns(fields); } catch {}
+                  await runSelectedReport();
+                } catch {}
+              }, 0);
+            }
+          }
         } catch (err) { showToast('Ошибка: ' + err.message, 'error'); } finally { hideLoading(); }
       });
     }
@@ -756,7 +772,7 @@
       sheetModal.classList.add('active');
       document.body.classList.add('modal-open');
       return new Promise((resolve)=>{
-        applySheet.onclick = async ()=>{ const sel = sheetSelect.value; const ws = workbook.Sheets[sel]; const rows = rowsFromSheetSmart(ws); currentData = rows; const cls = classifyDataset(rows, sel); const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${tempFileName}», лист «${sel}»: ${rows.length||0} строк. Тип: ${cls.label}`; try { if (window.electronAPI?.datasets?.create) { await window.electronAPI.datasets.create(`${tempFileName} [${sel}]`, rows, { from: 'single', type: cls.type }); } } catch {} sheetModal.classList.remove('active'); document.body.classList.remove('modal-open'); const reportsBtn = document.querySelector('[data-tab="reports"]'); if (reportsBtn) { reportsBtn.click(); setTimeout(()=>{ try{ renderReports(); }catch{} }, 0); } resolve(true); };
+        applySheet.onclick = async ()=>{ const sel = sheetSelect.value; const ws = workbook.Sheets[sel]; const rows = rowsFromSheetSmart(ws); currentData = rows; const cls = classifyDataset(rows, sel); const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${tempFileName}», лист «${sel}»: ${rows.length||0} строк. Тип: ${cls.label}`; let created = null; try { if (window.electronAPI?.datasets?.create) { created = await window.electronAPI.datasets.create(`${tempFileName} [${sel}]`, rows, { from: 'single', type: cls.type }); } } catch {} sheetModal.classList.remove('active'); document.body.classList.remove('modal-open'); const reportsBtn = document.querySelector('[data-tab="reports"]'); if (reportsBtn) { reportsBtn.click(); setTimeout(async ()=>{ try{ await renderReports(); await loadExistingMapping(); if (cls.type==='catalog' && created?.id) { const dsSel = document.getElementById('reportDatasetSelect'); if (dsSel) { dsSel.value = created.id; dsSel.dispatchEvent(new Event('change')); } selectedReportId = 'unit-economics-v1'; await updateMappingPanel(); try { const fields = await getAvailableFieldsForSelectedDataset(); autoMapColumns(fields); } catch {} await runSelectedReport(); } }catch(e){ } }, 0); } resolve(true); };
         const cancel = ()=>{ sheetModal.classList.remove('active'); document.body.classList.remove('modal-open'); resolve(false); };
         cancelSheet.onclick = cancel; closeSheetModal.onclick = cancel;
         sheetModal.onclick = (e)=>{ if (e.target===sheetModal) cancel(); };
@@ -859,6 +875,34 @@
     const reportsRegistry = [
       { id: 'summary-basic', name: 'Сводка по данным', description: 'Количество строк и колонок, список полей', requiredFields: [], compute: (rows) => { const rowsCount = rows.length; const fields = Array.from(new Set(rows.flatMap(r => Object.keys(r)))); return { summary: { rowsCount, columnsCount: fields.length }, rows: fields.map(f => ({ field: f })) }; } },
       { id: 'unit-mock', name: 'Юнит-экономика (черновик)', description: 'Пример отчёта с маппингом: Цена, Себестоимость, Комиссия, Логистика', requiredFields: ['price', 'cost', 'commission', 'logistics'], compute: (rows, mapping) => { const mapped = (row, key) => row[mapping[key] || key]; const result = rows.map(r => { const price = Number(mapped(r, 'price')) || 0; const cost = Number(mapped(r, 'cost')) || 0; const commission = Number(mapped(r, 'commission')) || 0; const logistics = Number(mapped(r, 'logistics')) || 0; const margin = price - cost - commission - logistics; const marginPct = price ? (margin / price) * 100 : 0; return { price, cost, commission, logistics, margin, marginPct: Number(marginPct.toFixed(2)) }; }); return { summary: null, rows: result }; } },
+      { id: 'catalog-audit', name: 'Аудит каталога', description: 'Проверка SKU, цен, себестоимости и категорий', requiredFields: [], compute: (rows) => {
+        if (!rows || rows.length===0) return { summary: { rowsCount: 0, columnsCount: 0 }, rows: [] };
+        const keys = Object.keys(rows[0]||{});
+        const lc = keys.map(k=>k.toLowerCase());
+        function findKey(cands){ const set = new Set(lc); for (const c of cands){ const idx = lc.findIndex(k=>k===c.toLowerCase()); if (idx!==-1) return keys[idx]; const fz = lc.findIndex(k=>k.includes(c.toLowerCase())); if (fz!==-1) return keys[fz]; } return null; }
+        const skuK = findKey(['sku','ваш sku','артикул продавца']);
+        const nameK = findKey(['name','название товара','наименование']);
+        const catK = findKey(['category_path','категория на маркете','категория']);
+        const priceK = findKey(['price','цена','стоимость продажи']);
+        const costK = findKey(['cost','себестоимость','закуп','закупка']);
+        const issues = [];
+        const seen = new Map();
+        rows.forEach(r=>{ const sku = (skuK? r[skuK]:null)||''; seen.set(sku, (seen.get(sku)||0)+1); });
+        rows.forEach(r=>{
+          const sku = (skuK? r[skuK]:null)||'';
+          const name = (nameK? r[nameK]:null)||'';
+          const cat = (catK? r[catK]:null)||'';
+          const price = Number(String(priceK? r[priceK]:0).toString().replace(/[^0-9.,-]/g,'').replace(',','.'))||0;
+          const cost = Number(String(costK? r[costK]:0).toString().replace(/[^0-9.,-]/g,'').replace(',','.'))||0;
+          const duplicates = sku? (seen.get(sku)>1) : false;
+          const missing = (!sku || !name || !cat);
+          const badNumbers = (price<=0 || cost<0 || (cost>0 && price>0 && cost>price));
+          const margin = price - cost;
+          if (duplicates || missing || badNumbers){ issues.push({ sku, name, category_path: cat, price, cost, margin, duplicate: duplicates, missing_fields: missing, suspicious: badNumbers }); }
+        });
+        const summary = { rowsCount: rows.length, columnsCount: Object.keys(rows[0]||{}).length };
+        return { summary, rows: issues.sort((a,b)=> Number(b.duplicate)-Number(a.duplicate) || Number(b.suspicious)-Number(a.suspicious) || (b.margin-a.margin)) };
+      } },
       { id: 'unit-economics-v1', name: 'Юнит‑экономика v1', description: 'Комиссия по тарифам FBY/FBS/DBS; маржа по цене/себестоимости', requiredFields: ['sku','name','category_path','price','scheme','cost'], compute: (rows, mapping) => { const m=(r,k)=> r[mapping[k]||k]; const out = rows.map(r=>{ const sku=m(r,'sku'); const name=m(r,'name'); const cat=m(r,'category_path')||m(r,'Категория на Маркете *')||m(r,'Категория'); const scheme=(String(m(r,'scheme')||'FBS').toUpperCase()); const price=Number(String(m(r,'price')).replace(/[^0-9.,-]/g,'').replace(',','.'))||0; const cost=Number(String(m(r,'cost')).replace(/[^0-9.,-]/g,'').replace(',','.'))||0; const ratePct = matchTariffForCategory(['FBY','FBS','DBS'].includes(scheme)?scheme:'FBS', cat); const commission = price * (ratePct/100); const logistics = 0; const margin = price - cost - commission - logistics; const marginPct = price? (margin/price*100):0; return { sku, name, category_path:cat, scheme, price, cost, ratePct, commission: Number(commission.toFixed(2)), logistics, margin: Number(margin.toFixed(2)), marginPct: Number(marginPct.toFixed(2)) }; }); const kpi = []; const avgMargin = out.reduce((a,c)=>a+c.margin,0)/(out.length||1); const avgPct = out.reduce((a,c)=>a+c.marginPct,0)/(out.length||1); kpi.push({label:'Позиций', value: out.length}); kpi.push({label:'Средняя маржа ₽', value: avgMargin.toFixed(0)}); kpi.push({label:'Средняя маржинальность %', value: avgPct.toFixed(2)}); return { summary: { rowsCount: out.length, columnsCount: Object.keys(out[0]||{}).length, kpi }, rows: out }; } },
       { id: 'sales-geography', name: 'География продаж (сводка)', description: 'Агрегация по региону', requiredFields: ['region','orders_units','orders_amount_rub'], compute: (rows, mapping) => { const g=(r,k)=> r[mapping[k]||k]; const data = rows.map(r=>({ region:g(r,'region')||g(r,'Регион'), units:Number(g(r,'orders_units'))||0, amount:Number(g(r,'orders_amount_rub'))||0 })); const grouped = {}; data.forEach(x=>{ if(!x.region) return; grouped[x.region] = grouped[x.region] || { region:x.region, units:0, amount:0 }; grouped[x.region].units+=x.units; grouped[x.region].amount+=x.amount; }); const table=Object.values(grouped).sort((a,b)=>b.amount-a.amount); return { summary: { rowsCount: table.length, columnsCount: 3 }, rows: table }; } },
       { id: 'boost-summary', name: 'Буст (сводка)', description: 'Сводные метрики по бусту, ROAS', requiredFields: ['campaign','spend_rub','orders_amount_rub'], compute: (rows, mapping) => { const g=(r,k)=> r[mapping[k]||k]; const data = rows.map(r=>({ campaign:g(r,'campaign')||g(r,'Кампания'), spend:Number(g(r,'spend_rub'))||0, revenue:Number(g(r,'orders_amount_rub'))||0 })); const grouped={}; data.forEach(x=>{ const key=x.campaign||'—'; grouped[key]=grouped[key]||{ campaign:key, spend:0, revenue:0 }; grouped[key].spend+=x.spend; grouped[key].revenue+=x.revenue; }); const table=Object.values(grouped).map(x=>({ ...x, roas: x.spend? Number((x.revenue/x.spend).toFixed(2)) : null })).sort((a,b)=>(b.revenue-a.revenue)); return { summary: { rowsCount: table.length, columnsCount: 4 }, rows: table }; } },
@@ -970,6 +1014,7 @@
       const report = reportsRegistry.find(r => r.id === selectedReportId); if (!report) { showToast('Не выбран отчёт', 'error'); return; }
       showLoading();
       try {
+        try { await loadBuiltInTariffs(); } catch {}
         const data = await window.electronAPI.datasets.get(datasetId); const rows = data?.rows || [];
         let mapping = {}; if (report.requiredFields && report.requiredFields.length > 0) { document.querySelectorAll('[data-map-key]')?.forEach(sel => { const key = sel.getAttribute('data-map-key'); if (sel.value) mapping[key] = sel.value; }); }
         const result = report.compute(rows, mapping);
@@ -1142,6 +1187,7 @@
       if (has('категория (уровень 1)') && has('тариф')) return { type: 'tariffs', label: 'Тарифы категорий' };
       if (/географ/i.test(sheetName) || has('регион')) return { type: 'geography', label: 'География продаж' };
       if (has('ваш sku') || has('категория на маркете') || has('габариты')) return { type: 'catalog', label: 'Каталог товаров' };
+      if (has('кампания') || has('campaign') || has('расход') || has('spend') || has('заказано товаров на сумму') || has('orders_amount_rub')) return { type: 'boost', label: 'Буст рекламных кампаний' };
       return { type: 'generic', label: 'Данные' };
     }
 
@@ -1174,9 +1220,20 @@
     }
     async function loadBuiltInTariffs() {
       if (tariffsByScheme.FBY || tariffsByScheme.FBS || tariffsByScheme.DBS) return;
-      const [wbfby, wbfbs, wbdbs] = await Promise.all([
+      let [wbfby, wbfbs, wbdbs] = await Promise.all([
         tryFetchXlsx('FBY.xlsx'), tryFetchXlsx('FBS.xlsx'), tryFetchXlsx('DBS.xlsx')
       ]);
+      // Fallback to data/tariffs if root files are not available
+      if (!wbfby || !wbfbs || !wbdbs) {
+        const [fb, fs, db] = await Promise.all([
+          wbfby ? Promise.resolve(null) : tryFetchXlsx('data/tariffs/FBY.xlsx'),
+          wbfbs ? Promise.resolve(null) : tryFetchXlsx('data/tariffs/FBS.xlsx'),
+          wbdbs ? Promise.resolve(null) : tryFetchXlsx('data/tariffs/DBS.xlsx')
+        ]);
+        if (!wbfby && fb) wbfby = fb;
+        if (!wbfbs && fs) wbfbs = fs;
+        if (!wbdbs && db) wbdbs = db;
+      }
       tariffsByScheme.FBY = parseTariffTable(wbfby);
       tariffsByScheme.FBS = parseTariffTable(wbfbs);
       tariffsByScheme.DBS = parseTariffTable(wbdbs);
