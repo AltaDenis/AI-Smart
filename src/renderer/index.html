@@ -512,7 +512,11 @@
         <h1 class="page-title">Юнит-экономика</h1>
       </div>
       <div class="file-upload" id="fileUploadArea">
-        <button class="btn" id="openDirBtn" style="margin-top: 12px;">Открыть папку с файлами</button>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap: wrap; margin-bottom: 8px;">
+          <button class="btn" id="selectFileBtn">Выбрать файл</button>
+          <button class="btn" id="openDirBtn">Открыть папку с файлами</button>
+        </div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" />
         <i class="ti ti-upload file-upload-icon"></i>
         <p>Нажмите, чтобы выбрать файл с данными</p>
         <small>Поддерживаемые форматы: XLSX, CSV, XLS. Или выберите папку с файлами ниже.</small>
@@ -861,6 +865,42 @@
 
       messages.scrollTop = messages.scrollHeight;
     });
+
+    // Explicit file input (browser-friendly and robust)
+    const selectFileBtn = document.getElementById('selectFileBtn');
+    const fileInput = document.getElementById('fileInput');
+    if (selectFileBtn && fileInput) {
+      selectFileBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fileInput.click();
+      });
+      fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const name = file.name;
+        const ext = name.split('.').pop().toLowerCase();
+        try {
+          if (ext === 'csv') {
+            const text = await file.text();
+            const wb = XLSX.read(text, { type: 'string' });
+            const rows = parseWorkbookToJSON(wb);
+            currentData = rows;
+          } else {
+            const buf = await file.arrayBuffer();
+            const wb = XLSX.read(buf, { type: 'array' });
+            const rows = parseWorkbookToJSON(wb);
+            currentData = rows;
+          }
+          const summary = document.getElementById('fileSummary');
+          if (summary) summary.textContent = `Файл «${name}» загружен: ${currentData.length || 0} строк.`;
+        } catch (err) {
+          alert('❌ Ошибка чтения файла: ' + err.message);
+        } finally {
+          fileInput.value = '';
+        }
+      });
+    }
   </script>
 </body>
 </html>
