@@ -18,6 +18,8 @@
       --accent-blue: #2a7fff;
       --accent-hover: #3b8cff;
       --accent-active: #1c6ed1;
+      --success: #22c55e;
+      --error: #ef4444;
       --border: #3a3f4b;
       --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
       --glow: 0 0 15px rgba(42, 127, 255, 0.4);
@@ -39,424 +41,79 @@
       --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Inter', sans-serif;
       background-color: var(--bg-primary);
       color: var(--text-primary);
-      display: flex;
-      min-height: 100vh;
-      overflow: hidden;
+      display: flex; min-height: 100vh; overflow: hidden;
     }
 
     .sidebar {
       width: var(--sidebar-width);
       background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
       border-right: 1px solid var(--border);
-      padding: 20px 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      position: fixed;
-      left: 0;
-      top: 0;
-      transition: var(--transition);
-      z-index: 100;
+      padding: 20px 0; display: flex; flex-direction: column; height: 100vh;
+      position: fixed; left: 0; top: 0; transition: var(--transition); z-index: 100;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
-    .logo {
-      padding: 0 20px 20px;
-      font-size: 20px;
-      font-weight: 700;
-      color: white;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .logo { padding: 0 20px 20px; font-size: 20px; font-weight: 700; color: white; display: flex; align-items: center; gap: 12px; }
+    .logo span { color: var(--accent-blue); }
 
-    .logo span {
-      color: var(--accent-blue);
-    }
+    .nav-menu { flex: 1; padding: 10px 0; }
+    .nav-section { margin-bottom: 30px; }
+    .nav-section-title { color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-transform: uppercase; padding: 0 20px 10px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
+    .nav-section-title i { color: var(--accent-blue); font-size: 14px; }
 
-    .nav-menu {
-      flex: 1;
-      padding: 10px 0;
-    }
+    .nav-item { display: flex; align-items: center; padding: 12px 20px; color: var(--text-secondary); cursor: pointer; transition: var(--transition); gap: 16px; font-weight: 500; border-radius: 8px; margin: 0 10px; }
+    .nav-item:hover { background: rgba(42, 127, 255, 0.1); color: var(--text-primary); }
+    .nav-item.active { background: rgba(42, 127, 255, 0.15); color: var(--accent-blue); }
+    .nav-item i { font-size: 20px; width: 28px; text-align: center; }
 
-    .nav-section {
-      margin-bottom: 30px;
-    }
+    .main-content { margin-left: var(--sidebar-width); flex: 1; padding: 30px; background-color: var(--bg-primary); transition: var(--transition); }
 
-    .nav-section-title {
-      color: var(--text-tertiary);
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      padding: 0 20px 10px;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .page-title { font-size: 28px; font-weight: 600; background: linear-gradient(90deg, var(--text-primary), var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
-    .nav-section-title i {
-      color: var(--accent-blue);
-      font-size: 14px;
-    }
+    .user-profile { display: flex; align-items: center; gap: 12px; background-color: var(--bg-tertiary); padding: 8px 14px; border-radius: 10px; cursor: pointer; }
+    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent-blue), #1c6ed1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; box-shadow: var(--glow); }
 
-    .nav-item {
-      display: flex;
-      align-items: center;
-      padding: 12px 20px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: var(--transition);
-      gap: 16px;
-      font-weight: 500;
-      border-radius: 8px;
-      margin: 0 10px;
-    }
+    .tab-content { display: none; animation: fadeIn 0.4s ease-out; height: calc(100vh - 140px); overflow-y: auto; padding-right: 10px; }
+    .tab-content::-webkit-scrollbar { width: 6px; }
+    .tab-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .tab-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
-    .nav-item:hover {
-      background: rgba(42, 127, 255, 0.1);
-      color: var(--text-primary);
-    }
+    .dashboard-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-secondary); padding: 0 20px; }
+    .greeting { font-size: 24px; font-weight: 500; margin-bottom: 16px; color: var(--text-primary); background: linear-gradient(90deg, var(--text-primary), var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .subtext { color: var(--text-tertiary); max-width: 500px; }
 
-    .nav-item.active {
-      background: rgba(42, 127, 255, 0.15);
-      color: var(--accent-blue);
-    }
+    .file-upload { border: 2px dashed var(--border); padding: 40px 20px; border-radius: var(--radius-lg); text-align: center; margin-bottom: 24px; background: rgba(42, 127, 255, 0.03); cursor: pointer; transition: border-color .2s; }
+    .file-upload-icon { font-size: 40px; color: var(--accent-blue); margin-bottom: 12px; }
+    .file-upload p { color: var(--text-secondary); margin: 8px 0; }
 
-    .nav-item i {
-      font-size: 20px;
-      width: 28px;
-      text-align: center;
-    }
+    .btn { padding: 12px 20px; background: linear-gradient(135deg, var(--accent-blue), var(--accent-hover)); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: 500; transition: var(--transition); font-size: 14px; display: inline-flex; align-items: center; gap: 8px; box-shadow: var(--glow); }
 
-    .main-content {
-      margin-left: var(--sidebar-width);
-      flex: 1;
-      padding: 30px;
-      background-color: var(--bg-primary);
-      transition: var(--transition);
-    }
+    /* Toasts */
+    .toast-root { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 2000; }
+    .toast { padding: 10px 12px; border-radius: 8px; color: #fff; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transform: translateY(8px); animation: toastIn .2s forwards; }
+    .toast.info { background: #3b82f6; }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--error); }
+    @keyframes toastIn { to { opacity: 1; transform: translateY(0); } }
 
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-    }
-
-    .page-title {
-      font-size: 28px;
-      font-weight: 600;
-      background: linear-gradient(90deg, var(--text-primary), var(--accent-blue));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .user-profile {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background-color: var(--bg-tertiary);
-      padding: 8px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-
-    .user-avatar {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, var(--accent-blue), #1c6ed1);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 14px;
-      box-shadow: var(--glow);
-    }
-
-    .tab-content {
-      display: none;
-      animation: fadeIn 0.4s ease-out;
-      height: calc(100vh - 140px);
-      overflow-y: auto;
-      padding-right: 10px;
-    }
-
-    .tab-content::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .tab-content::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 3px;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .dashboard-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      text-align: center;
-      color: var(--text-secondary);
-      padding: 0 20px;
-    }
-
-    .greeting {
-      font-size: 24px;
-      font-weight: 500;
-      margin-bottom: 16px;
-      color: var(--text-primary);
-      background: linear-gradient(90deg, var(--text-primary), var(--accent-blue));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .subtext {
-      color: var(--text-tertiary);
-      max-width: 500px;
-    }
-
-    .file-upload {
-      border: 2px dashed var(--border);
-      padding: 40px 20px;
-      border-radius: var(--radius-lg);
-      text-align: center;
-      margin-bottom: 24px;
-      background: rgba(42, 127, 255, 0.03);
-      cursor: pointer;
-    }
-
-    .file-upload-icon {
-      font-size: 40px;
-      color: var(--accent-blue);
-      margin-bottom: 12px;
-    }
-
-    .file-upload p {
-      color: var(--text-secondary);
-      margin: 8px 0;
-    }
-
-    .btn {
-      padding: 12px 20px;
-      background: linear-gradient(135deg, var(--accent-blue), var(--accent-hover));
-      color: white;
-      border: none;
-      border-radius: var(--radius-md);
-      cursor: pointer;
-      font-weight: 500;
-      transition: var(--transition);
-      font-size: 14px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: var(--glow);
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal.active {
-      display: flex;
-    }
-
-    .modal-content {
-      background-color: var(--bg-primary);
-      border-radius: var(--radius-lg);
-      width: 500px;
-      max-width: 90%;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-
-    .modal-header {
-      padding: 20px;
-      background-color: var(--bg-tertiary);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space_between;
-      align-items: center;
-    }
-
-    .modal-title {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 20px;
-      color: var(--text-secondary);
-      cursor: pointer;
-    }
-
-    .modal-close:hover {
-      color: var(--accent-blue);
-    }
-
-    .modal-body {
-      padding: 20px;
-    }
-
-    .modal-footer {
-      padding: 16px 20px;
-      background-color: var(--bg-tertiary);
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .form-group label {
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-
-    .form-group input {
-      padding: 10px 12px;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      color: var(--text-primary);
-      font-size: 14px;
-    }
-
-    .color-picker {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .color-preview {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-
-    .chat-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: var(--bg-secondary);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-
-    .chat-header {
-      padding: 16px 20px;
-      background: var(--bg-tertiary);
-      border-bottom: 1px solid var(--border);
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .chat-messages {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .message {
-      max-width: 80%;
-      padding: 12px 16px;
-      border-radius: 18px;
-      line-height: 1.5;
-    }
-
-    .message.user {
-      align-self: flex-end;
-      background: var(--accent-blue);
-      color: white;
-      border-bottom-right-radius: 4px;
-    }
-
-    .message.ai {
-      align-self: flex-start;
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-      border-bottom-left-radius: 4px;
-    }
-
-    .chat-input {
-      display: flex;
-      padding: 12px;
-      background: var(--bg-tertiary);
-      border-top: 1px solid var(--border);
-    }
-
-    .chat-input input {
-      flex: 1;
-      padding: 12px 16px;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 14px;
-    }
-
-    .send-btn {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, var(--accent-blue), var(--accent-hover));
-      border: none;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      cursor: pointer;
-    }
+    /* Loader overlay */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 1500; }
+    .overlay.active { display: flex; }
+    .spinner { width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
+  <div class="overlay" id="loadingOverlay"><div class="spinner"></div></div>
 
-  <!-- Sidebar -->
   <div class="sidebar">
     <div class="logo">
       <i class="ti ti-brain"></i>
@@ -481,10 +138,6 @@
           <i class="ti ti-currency-rouble"></i>
           <span>Юнит-экономика</span>
         </div>
-        <div class="nav-item" data-tab="complex-reports">
-          <i class="ti ti-clipboard-list"></i>
-          <span>Сложные отчёты</span>
-        </div>
       </div>
       <div class="nav-section">
         <div class="nav-section-title"><i class="ti ti-settings"></i> Настройки</div>
@@ -496,7 +149,6 @@
     </div>
   </div>
 
-  <!-- Main Content -->
   <div class="main-content">
     <div class="tab-content active" id="dashboard">
       <div class="header">
@@ -528,22 +180,6 @@
       <div id="fileSummary" style="color: var(--text-secondary);"></div>
     </div>
 
-    <div class="tab-content" id="complex-reports">
-      <div class="header">
-        <h1 class="page-title">Сложные отчёты</h1>
-      </div>
-      <div class="chat-container">
-        <div class="chat-header">AI-Аналитик</div>
-        <div class="chat-messages" id="chatMessages">
-          <div class="message ai">Привет! Загрузи данные, и я помогу проанализировать бизнес.</div>
-        </div>
-        <div class="chat-input">
-          <input type="text" id="chatInput" placeholder="Введите запрос..." />
-          <button class="send-btn" id="sendChat">➤</button>
-        </div>
-      </div>
-    </div>
-
     <div class="tab-content" id="datasets">
       <div class="header">
         <h1 class="page-title">Данные</h1>
@@ -552,6 +188,10 @@
         </div>
       </div>
       <div id="datasetsContent">
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 8px;">
+          <div id="datasetsListTitle" style="font-weight:600;">Наборы данных</div>
+          <input id="datasetsSearch" placeholder="Поиск..." style="background: var(--bg-tertiary); color: var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:8px 10px;" />
+        </div>
         <div id="datasetsList" style="margin-bottom:16px;"></div>
         <div id="datasetPreview"></div>
       </div>
@@ -616,7 +256,6 @@
     </div>
   </div>
 
-  <!-- Modal -->
   <div class="modal" id="settingsModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -651,21 +290,18 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button class="btn" style="background: var(--bg-terтиary); color: var(--text-primary);" id="cancelSettings">Отмена</button>
+        <button class="btn" style="background: var(--bg-tertiary); color: var(--text-primary);" id="cancelSettings">Отмена</button>
         <button class="btn" id="saveSettingsModal">Сохранить</button>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>
     let currentData = null;
-    const appSettings = {
-      userName: 'Пользователь',
-      userEmail: '',
-      theme: 'dark',
-      accentColor: '#2a7fff'
-    };
+    let activeChart = null;
+    const appSettings = { userName: 'Пользователь', userEmail: '', theme: 'dark', accentColor: '#2a7fff' };
 
     if (!window.electronAPI) {
       window.electronAPI = {
@@ -673,17 +309,8 @@
         setSetting: async (key, value) => { localStorage.setItem(key, value); return true; },
         openFile: async () => null,
         openDirectory: async () => null,
-        datasets: {
-          list: async () => [],
-          create: async (name, data, options) => ({ id: 'temp-id', name: name, rowsCount: data.length, createdAt: new Date() }),
-          get: async (id) => ({ rows: [] }),
-          rename: async (id, newName) => true,
-          delete: async (id) => true,
-        },
-        mappings: {
-          get: async (datasetId, reportId) => null,
-          set: async (datasetId, reportId, mapping) => true,
-        }
+        datasets: { list: async () => [], create: async (name, data, options) => ({ id: 'temp-id', name: name, rowsCount: data.length, createdAt: new Date() }), get: async (id) => ({ rows: [] }), rename: async () => true, delete: async () => true },
+        mappings: { get: async () => ({}), set: async () => true }
       };
     }
 
@@ -753,11 +380,7 @@
     });
 
     function getInputs(prefix) {
-      return {
-        name: document.getElementById(`userName${prefix}`),
-        email: document.getElementById(`userEmail${prefix}`),
-        colorValue: document.getElementById(`colorValue${prefix}`),
-      };
+      return { name: document.getElementById(`userName${prefix}`), email: document.getElementById(`userEmail${prefix}`), colorValue: document.getElementById(`colorValue${prefix}`) };
     }
 
     async function saveSettingsFrom(prefix) {
@@ -767,31 +390,24 @@
       const theme = document.body.getAttribute('data-theme') || 'dark';
       const accentColor = colorValue?.textContent || '#2a7fff';
 
-      appSettings.userName = userName;
-      appSettings.userEmail = userEmail;
-      appSettings.theme = theme;
-      appSettings.accentColor = accentColor;
+      appSettings.userName = userName; appSettings.userEmail = userEmail; appSettings.theme = theme; appSettings.accentColor = accentColor;
 
       try {
         await window.electronAPI.setSetting('userName', userName);
         await window.electronAPI.setSetting('userEmail', userEmail);
         await window.electronAPI.setSetting('theme', theme);
         await window.electronAPI.setSetting('accentColor', accentColor);
-      } catch (e) { /* noop */ }
+      } catch (e) {}
 
-      const avatar = document.querySelector('.user-avatar');
-      if (avatar && userName) avatar.textContent = userName[0].toUpperCase();
-      const greeting = document.getElementById('greetingText');
-      if (greeting && userName) greeting.textContent = `Добро пожаловать, ${userName}!`;
+      const avatar = document.querySelector('.user-avatar'); if (avatar && userName) avatar.textContent = userName[0].toUpperCase();
+      const greeting = document.getElementById('greetingText'); if (greeting && userName) greeting.textContent = `Добро пожаловать, ${userName}!`;
 
       if (settingsModal.classList.contains('active')) settingsModal.classList.remove('active');
-      alert('✅ Настройки сохранены');
+      showToast('Настройки сохранены', 'success');
     }
 
-    const savePageBtn = document.getElementById('saveSettingsPage');
-    if (savePageBtn) savePageBtn.addEventListener('click', () => saveSettingsFrom('Page'));
-    const saveModalBtn = document.getElementById('saveSettingsModal');
-    if (saveModalBtn) saveModalBtn.addEventListener('click', () => saveSettingsFrom('Modal'));
+    const savePageBtn = document.getElementById('saveSettingsPage'); if (savePageBtn) savePageBtn.addEventListener('click', () => saveSettingsFrom('Page'));
+    const saveModalBtn = document.getElementById('saveSettingsModal'); if (saveModalBtn) saveModalBtn.addEventListener('click', () => saveSettingsFrom('Modal'));
 
     document.addEventListener('DOMContentLoaded', async () => {
       try {
@@ -799,222 +415,87 @@
         const savedUserEmail = await window.electronAPI.getSetting('userEmail');
         const savedTheme = await window.electronAPI.getSetting('theme');
         const savedColor = await window.electronAPI.getSetting('accentColor');
-
-        if (savedTheme) {
-          document.body.setAttribute('data-theme', savedTheme);
-        }
-
-        if (savedColor) {
-          applyAccent(savedColor);
-        }
-
+        if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
+        if (savedColor) applyAccent(savedColor);
         const setIfExists = (id, val) => { const el = document.getElementById(id); if (el && typeof el.value !== 'undefined') el.value = val; };
         const setBgIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.style.backgroundColor = val; };
         const setTextIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-
-        if (savedUserName) {
-          setIfExists('userNamePage', savedUserName);
-          setIfExists('userNameModal', savedUserName);
-          const avatar = document.querySelector('.user-avatar');
-          if (avatar) avatar.textContent = savedUserName[0].toUpperCase();
-          const greeting = document.getElementById('greetingText');
-          if (greeting) greeting.textContent = `Добро пожаловать, ${savedUserName}!`;
-        }
-
-        if (savedUserEmail) {
-          setIfExists('userEmailPage', savedUserEmail);
-          setIfExists('userEmailModal', savedUserEmail);
-        }
-
-        const color = savedColor || '#2a7fff';
-        ['Page', 'Modal'].forEach(prefix => {
-          setIfExists(`colorPicker${prefix}`, color);
-          setBgIfExists(`colorPreview${prefix}`, color);
-          setTextIfExists(`colorValue${prefix}`, color);
-        });
-
-        bindColorPicker('Page');
-        bindColorPicker('Modal');
-      } catch (error) {
-      }
+        if (savedUserName) { setIfExists('userNamePage', savedUserName); setIfExists('userNameModal', savedUserName); const avatar = document.querySelector('.user-avatar'); if (avatar) avatar.textContent = savedUserName[0].toUpperCase(); const greeting = document.getElementById('greetingText'); if (greeting) greeting.textContent = `Добро пожаловать, ${savedUserName}!`; }
+        if (savedUserEmail) { setIfExists('userEmailPage', savedUserEmail); setIfExists('userEmailModal', savedUserEmail); }
+        const color = savedColor || '#2a7fff'; ['Page', 'Modal'].forEach(prefix => { setIfExists(`colorPicker${prefix}`, color); setBgIfExists(`colorPreview${prefix}`, color); setTextIfExists(`colorValue${prefix}`, color); });
+        bindColorPicker('Page'); bindColorPicker('Modal');
+      } catch {}
     });
 
-    function parseWorkbookToJSON(workbook) {
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      return XLSX.utils.sheet_to_json(worksheet, { defval: null });
-    }
+    // Toasts
+    const toastRoot = document.createElement('div'); toastRoot.className = 'toast-root'; document.body.appendChild(toastRoot);
+    function showToast(text, type = 'info') { const el = document.createElement('div'); el.className = `toast ${type}`; el.textContent = text; toastRoot.appendChild(el); setTimeout(() => el.remove(), 3000); }
 
-    document.getElementById('fileUploadArea').addEventListener('click', async () => {
-      try {
-        const file = await window.electronAPI.openFile();
-        if (!file) return;
-        const { name, data, ext } = file;
-        let workbook;
-        if (ext === 'csv') {
-          const csvText = atob(data);
-          workbook = XLSX.read(csvText, { type: 'string' });
-        } else {
-          workbook = XLSX.read(data, { type: 'base64' });
-        }
-        const rows = parseWorkbookToJSON(workbook);
-        currentData = rows;
-        const summary = document.getElementById('fileSummary');
-        if (summary) summary.textContent = `Файл «${name}» загружен: ${rows.length} строк.`;
-        console.log('Файл обработан');
-      } catch (error) {
-        alert('❌ Ошибка: ' + error.message);
-      }
-    });
+    // Loader overlay
+    const overlay = document.getElementById('loadingOverlay');
+    const showLoading = () => overlay.classList.add('active');
+    const hideLoading = () => overlay.classList.remove('active');
 
-    const openDirBtn = document.getElementById('openDirBtn');
-    if (openDirBtn) {
-      openDirBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        try {
-          const files = await window.electronAPI.openDirectory();
-          if (!files || files.length === 0) return;
-          let totalRows = 0;
-          let totalFiles = 0;
-          const previews = [];
-          files.forEach((f) => {
-            let wb;
-            if (f.ext === 'csv') {
-              const csvText = atob(f.data);
-              wb = XLSX.read(csvText, { type: 'string' });
-            } else {
-              wb = XLSX.read(f.data, { type: 'base64' });
-            }
-            const rows = parseWorkbookToJSON(wb);
-            totalFiles += 1;
-            totalRows += rows.length;
-            previews.push(`${f.name}: ${rows.length}`);
-          });
-          currentData = { filesCount: totalFiles, rowsCount: totalRows };
-          const summary = document.getElementById('fileSummary');
-          if (summary) summary.textContent = `Загружено файлов: ${totalFiles}, суммарно строк: ${totalRows}. (${previews.slice(0, 5).join('; ')}${previews.length > 5 ? '; …' : ''})`;
-        } catch (err) {
-          alert('❌ Ошибка: ' + err.message);
-        }
-      });
-    }
-
-    document.getElementById('sendChat').addEventListener('click', async () => {
-      const input = document.getElementById('chatInput');
-      const messages = document.getElementById('chatMessages');
-      const prompt = input.value.trim();
-      if (!prompt) return;
-
-      const userMsg = document.createElement('div');
-      userMsg.className = 'message user';
-      userMsg.textContent = prompt;
-      messages.appendChild(userMsg);
-
-      input.value = '';
-
-      const errorMsg = document.createElement('div');
-      errorMsg.className = 'message ai';
-      errorMsg.textContent = '❌ ИИ-модуль пока не подключён. API-ключ не задан.';
-      messages.appendChild(errorMsg);
-
-      messages.scrollTop = messages.scrollHeight;
-    });
-
-    // Explicit file input (browser-friendly and robust)
-    const selectFileBtn = document.getElementById('selectFileBtn');
-    const fileInput = document.getElementById('fileInput');
-    if (selectFileBtn && fileInput) {
-      selectFileBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        fileInput.click();
-      });
-      fileInput.addEventListener('change', async (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const name = file.name;
-        const ext = name.split('.').pop().toLowerCase();
-        try {
-          if (ext === 'csv') {
-            const text = await file.text();
-            const wb = XLSX.read(text, { type: 'string' });
-            currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
-          } else {
-            const buf = await file.arrayBuffer();
-            const wb = XLSX.read(buf, { type: 'array' });
-            currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
-          }
-          const summary = document.getElementById('fileSummary');
-          if (summary) summary.textContent = `Файл «${name}» загружен: ${currentData.length || 0} строк.`;
-        } catch (err) {
-          alert('❌ Ошибка чтения файла: ' + err.message);
-        } finally {
-          fileInput.value = '';
-        }
-      });
-    }
-
-    // Simple toasts
-    const toastRoot = document.createElement('div');
-    toastRoot.style.position = 'fixed';
-    toastRoot.style.right = '20px';
-    toastRoot.style.bottom = '20px';
-    toastRoot.style.display = 'flex';
-    toastRoot.style.flexDirection = 'column';
-    toastRoot.style.gap = '8px';
-    document.body.appendChild(toastRoot);
-    function showToast(text, type = 'info') {
-      const el = document.createElement('div');
-      el.textContent = text;
-      el.style.padding = '10px 12px';
-      el.style.borderRadius = '8px';
-      el.style.color = '#fff';
-      el.style.fontSize = '14px';
-      el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-      el.style.background = type === 'error' ? '#ef4444' : type === 'success' ? '#22c55e' : '#3b82f6';
-      toastRoot.appendChild(el);
-      setTimeout(() => el.remove(), 3000);
-    }
-
-    // Drag & drop import on unit-economics area
+    // Drag & drop import
     const uploadArea = document.getElementById('fileUploadArea');
     if (uploadArea) {
       ['dragenter','dragover'].forEach(ev => uploadArea.addEventListener(ev, e => { e.preventDefault(); uploadArea.style.borderColor = 'var(--accent-blue)'; }));
       ['dragleave','drop'].forEach(ev => uploadArea.addEventListener(ev, e => { e.preventDefault(); uploadArea.style.borderColor = 'var(--border)'; }));
       uploadArea.addEventListener('drop', async (e) => {
-        const f = e.dataTransfer.files?.[0];
-        if (!f) return;
+        const f = e.dataTransfer.files?.[0]; if (!f) return;
         try {
+          showLoading();
           const name = f.name; const ext = name.split('.').pop().toLowerCase();
-          if (ext === 'csv') {
-            const text = await f.text();
-            const wb = XLSX.read(text, { type: 'string' });
-            currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
-          } else {
-            const buf = await f.arrayBuffer();
-            const wb = XLSX.read(buf, { type: 'array' });
-            currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
-          }
-          const summary = document.getElementById('fileSummary');
-          if (summary) summary.textContent = `Файл «${name}» загружен: ${currentData.length || 0} строк.`;
+          if (ext === 'csv') { const text = await f.text(); const wb = XLSX.read(text, { type: 'string' }); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null }); }
+          else { const buf = await f.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array' }); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null }); }
+          const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${name}» загружен: ${currentData.length || 0} строк.`;
           showToast('Файл загружен', 'success');
-        } catch (err) {
-          showToast('Ошибка загрузки файла: ' + err.message, 'error');
-        }
+        } catch (err) { showToast('Ошибка загрузки файла: ' + err.message, 'error'); } finally { hideLoading(); }
+      });
+    }
+
+    // Explicit file input
+    const selectFileBtn = document.getElementById('selectFileBtn'); const fileInput = document.getElementById('fileInput');
+    if (selectFileBtn && fileInput) {
+      selectFileBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); fileInput.click(); });
+      fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0]; if (!file) return;
+        const name = file.name; const ext = name.split('.').pop().toLowerCase();
+        try {
+          showLoading();
+          if (ext === 'csv') { const text = await file.text(); const wb = XLSX.read(text, { type: 'string' }); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null }); }
+          else { const buf = await file.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array' }); currentData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null }); }
+          const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${name}» загружен: ${currentData.length || 0} строк.`;
+          showToast('Файл загружен', 'success');
+        } catch (err) { showToast('Ошибка чтения файла: ' + err.message, 'error'); } finally { fileInput.value = ''; hideLoading(); }
+      });
+    }
+
+    // Open directory (Electron)
+    const openDirBtn = document.getElementById('openDirBtn');
+    if (openDirBtn) {
+      openDirBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        try {
+          showLoading();
+          const files = await window.electronAPI.openDirectory();
+          if (!files || files.length === 0) return;
+          let totalRows = 0; let totalFiles = 0; const previews = [];
+          files.forEach((f) => { let wb; if (f.ext === 'csv') { const csvText = atob(f.data); wb = XLSX.read(csvText, { type: 'string' }); } else { wb = XLSX.read(f.data, { type: 'base64' }); } const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null }); totalFiles += 1; totalRows += rows.length; previews.push(`${f.name}: ${rows.length}`); });
+          currentData = { filesCount: totalFiles, rowsCount: totalRows };
+          const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Загружено файлов: ${totalFiles}, суммарно строк: ${totalRows}. (${previews.slice(0, 5).join('; ')}${previews.length > 5 ? '; …' : ''})`;
+          showToast('Файлы загружены', 'success');
+        } catch (err) { showToast('Ошибка: ' + err.message, 'error'); } finally { hideLoading(); }
       });
     }
 
     // Datasets UI
     async function renderDatasets() {
-      const listEl = document.getElementById('datasetsList');
-      const prevEl = document.getElementById('datasetPreview');
+      const listEl = document.getElementById('datasetsList'); const prevEl = document.getElementById('datasetPreview'); const q = (document.getElementById('datasetsSearch')?.value || '').trim().toLowerCase();
       if (!listEl || !prevEl) return;
-      const items = await window.electronAPI.datasets.list();
-      if (!items || items.length === 0) {
-        listEl.innerHTML = '<div style="color:var(--text-secondary)">Нет сохранённых наборов данных</div>';
-        prevEl.innerHTML = '';
-        return;
-      }
+      let items = await window.electronAPI.datasets.list();
+      if (q) items = items.filter(i => i.name.toLowerCase().includes(q));
+      if (!items || items.length === 0) { listEl.innerHTML = '<div style="color:var(--text-secondary)">Нет сохранённых наборов данных</div>'; prevEl.innerHTML = ''; return; }
       listEl.innerHTML = items.map(i => `
         <div data-id="${i.id}" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px; background:var(--bg-secondary)">
           <div style="display:flex; gap:12px; align-items:center;">
@@ -1027,32 +508,17 @@
           <div style="display:flex; gap:8px;">
             <button class="btn" data-action="preview">Предпросмотр</button>
             <button class="btn" data-action="rename">Переименовать</button>
-            <button class="btn" data-action="delete" style="background:#ef4444">Удалить</button>
+            <button class="btn" data-action="delete" style="background:var(--error)">Удалить</button>
           </div>
         </div>
       `).join('');
 
       listEl.querySelectorAll('[data-action]')?.forEach(btn => {
         btn.addEventListener('click', async () => {
-          const card = btn.closest('[data-id]');
-          const id = card.getAttribute('data-id');
-          const action = btn.getAttribute('data-action');
-          if (action === 'preview') {
-            const data = await window.electronAPI.datasets.get(id);
-            const rows = data?.rows || [];
-            prevEl.innerHTML = renderTable(rows.slice(0, 50));
-          } else if (action === 'rename') {
-            const newName = prompt('Новое имя набора:');
-            if (!newName) return;
-            await window.electronAPI.datasets.rename(id, newName);
-            showToast('Набор переименован', 'success');
-            renderDatasets();
-          } else if (action === 'delete') {
-            if (!confirm('Удалить набор данных?')) return;
-            await window.electronAPI.datasets.delete(id);
-            showToast('Набор удалён', 'success');
-            renderDatasets();
-          }
+          const card = btn.closest('[data-id]'); const id = card.getAttribute('data-id'); const action = btn.getAttribute('data-action');
+          if (action === 'preview') { const data = await window.electronAPI.datasets.get(id); const rows = data?.rows || []; prevEl.innerHTML = renderTable(rows.slice(0, 50)); }
+          else if (action === 'rename') { const newName = prompt('Новое имя набора:'); if (!newName) return; await window.electronAPI.datasets.rename(id, newName); showToast('Набор переименован', 'success'); renderDatasets(); }
+          else if (action === 'delete') { if (!confirm('Удалить набор данных?')) return; await window.electronAPI.datasets.delete(id); showToast('Набор удалён', 'success'); renderDatasets(); }
         });
       });
     }
@@ -1060,73 +526,35 @@
     function renderTable(rows) {
       if (!rows || rows.length === 0) return '<div style="color:var(--text-secondary)">Пусто</div>';
       const cols = Array.from(new Set(rows.flatMap(r => Object.keys(r))));
-      const thead = `<tr>${cols.map(c => `<th style="text-align:left; padding:8px; border-bottom:1px solid var(--border)">${c}</th>`).join('')}</tr>`;
-      const tbody = rows.map(r => `<tr>${cols.map(c => `<td style="padding:8px; border-bottom:1px solid var(--border)">${r[c] ?? ''}</td>`).join('')}</tr>`).join('');
-      return `<div style="overflow:auto; border:1px solid var(--border); border-radius:8px;"><table style="border-collapse:collapse; min-width:600px; width:100%">${thead}${tbody}</table></div>`;
+      const thead = `<tr>${cols.map(c => `<th style=\"text-align:left; padding:8px; border-bottom:1px solid var(--border)\">${c}</th>`).join('')}</tr>`;
+      const tbody = rows.map(r => `<tr>${cols.map(c => `<td style=\"padding:8px; border-bottom:1px solid var(--border)\">${r[c] ?? ''}</td>`).join('')}</tr>`).join('');
+      return `<div style=\"overflow:auto; border:1px solid var(--border); border-radius:8px;\"><table style=\"border-collapse:collapse; min-width:600px; width:100%\">${thead}${tbody}</table></div>`;
     }
 
     const saveDatasetBtn = document.getElementById('saveDatasetBtn');
     if (saveDatasetBtn) {
       saveDatasetBtn.addEventListener('click', async () => {
-        if (!currentData || !currentData.length) {
-          showToast('Нет данных для сохранения', 'error');
-          return;
-        }
-        const name = prompt('Имя набора данных:', 'Новый набор');
-        if (!name) return;
-        const item = await window.electronAPI.datasets.create(name, currentData, { from: 'import' });
-        showToast('Набор сохранён', 'success');
-        renderDatasets();
+        if (!currentData || !currentData.length) { showToast('Нет данных для сохранения', 'error'); return; }
+        const name = prompt('Имя набора данных:', 'Новый набор'); if (!name) return;
+        showLoading();
+        try { await window.electronAPI.datasets.create(name, currentData, { from: 'import' }); showToast('Набор сохранён', 'success'); renderDatasets(); }
+        catch (e) { showToast('Ошибка сохранения набора', 'error'); }
+        finally { hideLoading(); }
       });
     }
 
-    // When switching to datasets tab, refresh list
-    document.querySelector('[data-tab="datasets"]').addEventListener('click', () => {
-      setTimeout(renderDatasets, 0);
-    });
+    document.querySelector('[data-tab="datasets"]').addEventListener('click', () => { setTimeout(renderDatasets, 0); });
+    const datasetsSearch = document.getElementById('datasetsSearch'); if (datasetsSearch) datasetsSearch.addEventListener('input', () => renderDatasets());
 
-    // Reports framework
+    // Reports
     const reportsRegistry = [
-      {
-        id: 'summary-basic',
-        name: 'Сводка по данным',
-        description: 'Количество строк и колонок, список полей',
-        requiredFields: [],
-        compute: (rows, mapping) => {
-          const rowsCount = rows.length;
-          const fields = Array.from(new Set(rows.flatMap(r => Object.keys(r))));
-          return {
-            summary: { rowsCount, columnsCount: fields.length },
-            rows: fields.map(f => ({ field: f }))
-          };
-        }
-      },
-      {
-        id: 'unit-mock',
-        name: 'Юнит-экономика (черновик)',
-        description: 'Пример отчёта с маппингом: Цена, Себестоимость, Комиссия, Логистика',
-        requiredFields: ['price', 'cost', 'commission', 'logistics'],
-        compute: (rows, mapping) => {
-          const mapped = (row, key) => row[mapping[key] || key];
-          const result = rows.map(r => {
-            const price = Number(mapped(r, 'price')) || 0;
-            const cost = Number(mapped(r, 'cost')) || 0;
-            const commission = Number(mapped(r, 'commission')) || 0;
-            const logistics = Number(mapped(r, 'logistics')) || 0;
-            const margin = price - cost - commission - logistics;
-            const marginPct = price ? (margin / price) * 100 : 0;
-            return { price, cost, commission, logistics, margin, marginPct: Number(marginPct.toFixed(2)) };
-          });
-          return { summary: null, rows: result };
-        }
-      }
+      { id: 'summary-basic', name: 'Сводка по данным', description: 'Количество строк и колонок, список полей', requiredFields: [], compute: (rows) => { const rowsCount = rows.length; const fields = Array.from(new Set(rows.flatMap(r => Object.keys(r)))); return { summary: { rowsCount, columnsCount: fields.length }, rows: fields.map(f => ({ field: f })) }; } },
+      { id: 'unit-mock', name: 'Юнит-экономика (черновик)', description: 'Пример отчёта с маппингом: Цена, Себестоимость, Комиссия, Логистика', requiredFields: ['price', 'cost', 'commission', 'logistics'], compute: (rows, mapping) => { const mapped = (row, key) => row[mapping[key] || key]; const result = rows.map(r => { const price = Number(mapped(r, 'price')) || 0; const cost = Number(mapped(r, 'cost')) || 0; const commission = Number(mapped(r, 'commission')) || 0; const logistics = Number(mapped(r, 'logistics')) || 0; const margin = price - cost - commission - logistics; const marginPct = price ? (margin / price) * 100 : 0; return { price, cost, commission, logistics, margin, marginPct: Number(marginPct.toFixed(2)) }; }); return { summary: null, rows: result }; } }
     ];
 
-    let selectedReportId = reportsRegistry[0]?.id;
-    let currentReportRows = [];
+    let selectedReportId = reportsRegistry[0]?.id; let currentReportRows = [];
 
     async function renderReports() {
-      // Gallery
       const gallery = document.getElementById('reportsGallery');
       gallery.innerHTML = reportsRegistry.map(r => `
         <div data-report-id="${r.id}" style="border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; cursor:pointer; background: var(--bg-secondary);">
@@ -1134,135 +562,74 @@
           <div style="color:var(--text-secondary); font-size:13px;">${r.description}</div>
         </div>
       `).join('');
-      gallery.querySelectorAll('[data-report-id]').forEach(card => {
-        card.addEventListener('click', () => {
-          selectedReportId = card.getAttribute('data-report-id');
-          gallery.querySelectorAll('[data-report-id]').forEach(c => c.style.outline = 'none');
-          card.style.outline = '2px solid var(--accent-blue)';
-          updateMappingPanelVisibility();
-        });
-      });
+      gallery.querySelectorAll('[data-report-id]').forEach(card => { card.addEventListener('click', async () => { selectedReportId = card.getAttribute('data-report-id'); gallery.querySelectorAll('[data-report-id]').forEach(c => c.style.outline = 'none'); card.style.outline = '2px solid var(--accent-blue)'; updateMappingPanelVisibility(); await loadExistingMapping(); }); });
 
-      // Dataset select
-      const select = document.getElementById('reportDatasetSelect');
-      const items = await window.electronAPI.datasets.list();
-      select.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.rowsCount})</option>`).join('');
-      updateMappingPanelVisibility();
+      const select = document.getElementById('reportDatasetSelect'); const items = await window.electronAPI.datasets.list(); select.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.rowsCount})</option>`).join(''); updateMappingPanelVisibility();
+      select.addEventListener('change', async () => { await loadExistingMapping(); });
     }
 
     function updateMappingPanelVisibility() {
-      const report = reportsRegistry.find(r => r.id === selectedReportId);
-      const panel = document.getElementById('mappingPanel');
-      const fieldsWrap = document.getElementById('mappingFields');
-      if (!report) return;
-      if (report.requiredFields && report.requiredFields.length > 0) {
-        panel.style.display = 'block';
-        fieldsWrap.innerHTML = report.requiredFields.map(f => `
-          <div style="color:var(--text-secondary)">${f}</div>
-          <input data-map-key="${f}" placeholder="выберите колонку" style="background: var(--bg-tertiary); color: var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:8px 10px;" />
-        `).join('');
-      } else {
-        panel.style.display = 'none';
-        fieldsWrap.innerHTML = '';
-      }
+      const report = reportsRegistry.find(r => r.id === selectedReportId); const panel = document.getElementById('mappingPanel'); const fieldsWrap = document.getElementById('mappingFields'); if (!report) return;
+      if (report.requiredFields && report.requiredFields.length > 0) { panel.style.display = 'block'; fieldsWrap.innerHTML = report.requiredFields.map(f => ` <div style="color:var(--text-secondary)">${f}</div> <input data-map-key="${f}" placeholder="выберите колонку" style="background: var(--bg-tertiary); color: var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:8px 10px;" />`).join(''); }
+      else { panel.style.display = 'none'; fieldsWrap.innerHTML = ''; }
     }
 
     async function loadExistingMapping() {
-      const select = document.getElementById('reportDatasetSelect');
-      const datasetId = select.value;
-      const mapping = await window.electronAPI.mappings.get(datasetId, selectedReportId);
-      document.querySelectorAll('[data-map-key]')?.forEach(input => {
-        const key = input.getAttribute('data-map-key');
-        if (mapping && mapping[key]) input.value = mapping[key];
-      });
+      const select = document.getElementById('reportDatasetSelect'); const datasetId = select.value; const mapping = await window.electronAPI.mappings.get(datasetId, selectedReportId);
+      document.querySelectorAll('[data-map-key]')?.forEach(input => { const key = input.getAttribute('data-map-key'); if (mapping && mapping[key]) input.value = mapping[key]; });
     }
 
     function autoMapColumns(availableFields) {
-      const synonyms = {
-        price: ['price','цена','Стоимость продажи','Продажа'],
-        cost: ['cost','себестоимость','Закуп','Закупка'],
-        commission: ['commission','комиссия'],
-        logistics: ['logistics','логистика','доставка','тариф доставки'],
-      };
-      document.querySelectorAll('[data-map-key]')?.forEach(input => {
-        const key = input.getAttribute('data-map-key');
-        const candidates = (synonyms[key] || []).map(s => s.toLowerCase());
-        const match = availableFields.find(f => candidates.includes(f.toLowerCase())) || availableFields.find(f => f.toLowerCase() === key);
-        if (match) input.value = match;
-      });
+      const synonyms = { price: ['price','цена','Стоимость продажи','Продажа'], cost: ['cost','себестоимость','Закуп','Закупка'], commission: ['commission','комиссия'], logistics: ['logistics','логистика','доставка','тариф доставки'] };
+      document.querySelectorAll('[data-map-key]')?.forEach(input => { const key = input.getAttribute('data-map-key'); const candidates = (synonyms[key] || []).map(s => s.toLowerCase()); const match = availableFields.find(f => candidates.includes(f.toLowerCase())) || availableFields.find(f => f.toLowerCase() === key); if (match) input.value = match; });
     }
 
     async function runSelectedReport() {
-      const select = document.getElementById('reportDatasetSelect');
-      const datasetId = select.value;
-      if (!datasetId) { showToast('Выберите набор данных', 'error'); return; }
-      const report = reportsRegistry.find(r => r.id === selectedReportId);
-      if (!report) { showToast('Не выбран отчёт', 'error'); return; }
-      const data = await window.electronAPI.datasets.get(datasetId);
-      const rows = data?.rows || [];
-      // collect mapping if required
-      let mapping = {};
-      if (report.requiredFields && report.requiredFields.length > 0) {
-        document.querySelectorAll('[data-map-key]')?.forEach(input => {
-          const key = input.getAttribute('data-map-key');
-          if (input.value) mapping[key] = input.value;
-        });
-      }
-      const result = report.compute(rows, mapping);
-      currentReportRows = result.rows || [];
-      const resultEl = document.getElementById('reportResult');
-      const summaryBlock = result.summary ? `<div style="margin-bottom:12px; color:var(--text-secondary)">Строк: ${result.summary.rowsCount}, Полей: ${result.summary.columnsCount}</div>` : '';
-      resultEl.innerHTML = `${summaryBlock}${renderTable(currentReportRows.slice(0, 1000))}`;
-      showToast('Отчёт готов', 'success');
+      const select = document.getElementById('reportDatasetSelect'); const datasetId = select.value; if (!datasetId) { showToast('Выберите набор данных', 'error'); return; }
+      const report = reportsRegistry.find(r => r.id === selectedReportId); if (!report) { showToast('Не выбран отчёт', 'error'); return; }
+      showLoading();
+      try {
+        const data = await window.electronAPI.datasets.get(datasetId); const rows = data?.rows || [];
+        let mapping = {}; if (report.requiredFields && report.requiredFields.length > 0) { document.querySelectorAll('[data-map-key]')?.forEach(input => { const key = input.getAttribute('data-map-key'); if (input.value) mapping[key] = input.value; }); }
+        const result = report.compute(rows, mapping);
+        currentReportRows = result.rows || [];
+        const resultEl = document.getElementById('reportResult');
+        const summaryBlock = result.summary ? `<div style="margin-bottom:12px; color:var(--text-secondary)">Строк: ${result.summary.rowsCount}, Полей: ${result.summary.columnsCount}</div>` : '';
+        resultEl.innerHTML = `${summaryBlock}${renderTable(currentReportRows.slice(0, 1000))}`;
+        renderChartIfApplicable(resultEl, currentReportRows);
+        showToast('Отчёт готов', 'success');
+      } catch (e) { showToast('Ошибка генерации отчёта', 'error'); } finally { hideLoading(); }
+    }
+
+    function renderChartIfApplicable(container, rows) {
+      const hasMargin = rows.length && Object.prototype.hasOwnProperty.call(rows[0], 'margin');
+      if (!hasMargin) return;
+      const canvas = document.createElement('canvas'); canvas.height = 220; container.prepend(canvas);
+      const labels = rows.slice(0, 50).map((_, i) => `#${i+1}`);
+      const values = rows.slice(0, 50).map(r => Number(r.margin) || 0);
+      if (activeChart) { activeChart.destroy(); }
+      activeChart = new Chart(canvas.getContext('2d'), { type: 'bar', data: { labels, datasets: [{ label: 'Маржа', data: values, backgroundColor: 'rgba(42,127,255,0.4)', borderColor: 'rgba(42,127,255,1)', borderWidth: 1 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') } }, y: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') } } } } });
     }
 
     function exportToCsv(rows) {
-      if (!rows || rows.length === 0) return;
-      const cols = Array.from(new Set(rows.flatMap(r => Object.keys(r))));
+      if (!rows || rows.length === 0) return; const cols = Array.from(new Set(rows.flatMap(r => Object.keys(r))));
       const csv = [cols.join(',')].concat(rows.map(r => cols.map(c => JSON.stringify(r[c] ?? '')).join(','))).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'report.csv'; a.click(); URL.revokeObjectURL(url);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'report.csv'; a.click(); URL.revokeObjectURL(url);
     }
 
     function exportToXlsx(rows) {
-      if (!rows || rows.length === 0) return;
-      const ws = XLSX.utils.json_to_sheet(rows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Report');
-      XLSX.writeFile(wb, 'report.xlsx');
+      if (!rows || rows.length === 0) return; const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Report'); XLSX.writeFile(wb, 'report.xlsx');
     }
 
     document.getElementById('runReportBtn').addEventListener('click', runSelectedReport);
     document.getElementById('exportCsvBtn').addEventListener('click', () => exportToCsv(currentReportRows));
     document.getElementById('exportXlsxBtn').addEventListener('click', () => exportToXlsx(currentReportRows));
 
-    // Refresh reports tab on open
-    const reportsTabBtn = document.querySelector('[data-tab="reports"]');
-    if (reportsTabBtn) {
-      reportsTabBtn.addEventListener('click', async () => { await renderReports(); await loadExistingMapping(); });
-    }
+    const reportsTabBtn = document.querySelector('[data-tab="reports"]'); if (reportsTabBtn) { reportsTabBtn.addEventListener('click', async () => { await renderReports(); await loadExistingMapping(); }); }
 
-    // Mapping actions
-    document.getElementById('autoMapBtn').addEventListener('click', async () => {
-      const select = document.getElementById('reportDatasetSelect');
-      const datasetId = select.value;
-      const data = await window.electronAPI.datasets.get(datasetId);
-      const fields = Array.from(new Set((data?.rows || []).flatMap(r => Object.keys(r))));
-      autoMapColumns(fields);
-    });
-    document.getElementById('saveMappingBtn').addEventListener('click', async () => {
-      const select = document.getElementById('reportDatasetSelect');
-      const datasetId = select.value;
-      const mapping = {};
-      document.querySelectorAll('[data-map-key]')?.forEach(input => {
-        const key = input.getAttribute('data-map-key');
-        if (input.value) mapping[key] = input.value;
-      });
-      await window.electronAPI.mappings.set(datasetId, selectedReportId, mapping);
-      showToast('Маппинг сохранён', 'success');
-    });
+    document.getElementById('autoMapBtn').addEventListener('click', async () => { const select = document.getElementById('reportDatasetSelect'); const datasetId = select.value; const data = await window.electronAPI.datasets.get(datasetId); const fields = Array.from(new Set((data?.rows || []).flatMap(r => Object.keys(r)))); autoMapColumns(fields); });
+    document.getElementById('saveMappingBtn').addEventListener('click', async () => { const select = document.getElementById('reportDatasetSelect'); const datasetId = select.value; const mapping = {}; document.querySelectorAll('[data-map-key]')?.forEach(input => { const key = input.getAttribute('data-map-key'); if (input.value) mapping[key] = input.value; }); await window.electronAPI.mappings.set(datasetId, selectedReportId, mapping); showToast('Маппинг сохранён', 'success'); });
   </script>
 </body>
 </html>
