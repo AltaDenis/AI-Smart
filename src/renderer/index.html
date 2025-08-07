@@ -647,13 +647,26 @@
         e.stopPropagation();
         try {
           showLoading();
+          await loadBuiltInTariffs();
           const files = await window.electronAPI.openDirectory();
           if (!files || files.length === 0) return;
-          let totalRows = 0; let totalFiles = 0; const previews = [];
-          files.forEach((f) => { let wb; if (f.ext === 'csv') { const csvText = atob(f.data); wb = XLSX.read(csvText, { type: 'string' }); } else { wb = XLSX.read(f.data, { type: 'base64' }); } const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null }); totalFiles += 1; totalRows += rows.length; previews.push(`${f.name}: ${rows.length}`); });
-          currentData = { filesCount: totalFiles, rowsCount: totalRows };
-          const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Загружено файлов: ${totalFiles}, суммарно строк: ${totalRows}. (${previews.slice(0, 5).join('; ')}${previews.length > 5 ? '; …' : ''})`;
-          showToast('Файлы загружены', 'success');
+          let created = 0; const logs = [];
+          for (const f of files) {
+            try {
+              let wb;
+              if (f.ext === 'csv') { const csvText = atob(f.data); wb = XLSX.read(csvText, { type: 'string' }); }
+              else { wb = XLSX.read(f.data, { type: 'base64' }); }
+              const best = selectBestSheet(wb);
+              const ws = wb.Sheets[best];
+              const rows = rowsFromSheetSmart(ws);
+              const cls = classifyDataset(rows, best);
+              await window.electronAPI.datasets.create(`${f.name} [${best}]`, rows, { from: 'dir', type: cls.type });
+              created += 1; logs.push(`${f.name}✓`);
+            } catch (err) { logs.push(`${f.name}✗`); }
+          }
+          showToast(`Импортировано наборов: ${created}`, 'success');
+          const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Импорт завершён. ${created} наборов. ${logs.slice(0,6).join(', ')}${logs.length>6?'…':''}`;
+          renderDatasets();
         } catch (err) { showToast('Ошибка: ' + err.message, 'error'); } finally { hideLoading(); }
       });
     }
@@ -761,8 +774,10 @@
     const reportsRegistry = [
       { id: 'summary-basic', name: 'Сводка по данным', description: 'Количество строк и колонок, список полей', requiredFields: [], compute: (rows) => { const rowsCount = rows.length; const fields = Array.from(new Set(rows.flatMap(r => Object.keys(r)))); return { summary: { rowsCount, columnsCount: fields.length }, rows: fields.map(f => ({ field: f })) }; } },
       { id: 'unit-mock', name: 'Юнит-экономика (черновик)', description: 'Пример отчёта с маппингом: Цена, Себестоимость, Комиссия, Логистика', requiredFields: ['price', 'cost', 'commission', 'logistics'], compute: (rows, mapping) => { const mapped = (row, key) => row[mapping[key] || key]; const result = rows.map(r => { const price = Number(mapped(r, 'price')) || 0; const cost = Number(mapped(r, 'cost')) || 0; const commission = Number(mapped(r, 'commission')) || 0; const logistics = Number(mapped(r, 'logistics')) || 0; const margin = price - cost - commission - logistics; const marginPct = price ? (margin / price) * 100 : 0; return { price, cost, commission, logistics, margin, marginPct: Number(marginPct.toFixed(2)) }; }); return { summary: null, rows: result }; } },
-      { id: 'catalog-audit', name: 'Аудит каталога', description: 'Проверка обязательных полей, нормализация габаритов и веса', requiredFields: ['sku','name','category','price'], compute: (rows, mapping) => { const m=(r,k)=> r[mapping[k]||k]; function parseDims(v){ if(!v) return {length:null,width:null,height:null}; const s=String(v).replace(/,/g,'.'); const parts=s.split(/[xX\/\-\s]+/).map(t=>Number(t)||null).filter(v=>v!=null); return {length:parts[0]||null,width:parts[1]||null,height:parts[2]||null}; } const out = rows.map(r=>{ const sku=m(r,'sku'); const name=m(r,'name'); const category=m(r,'category')||m(r,'category_path'); const price=Number(String(m(r,'price')).replace(/[^0-9.,-]/g,'').replace(',','.'))||0; const weight=Number(String(m(r,'weight_kg')||m(r,'weight')).replace(',','.'))||null; const dims = parseDims(m(r,'dimensions_cm')); const issues=[]; if(!sku) issues.push('Нет SKU'); if(!name) issues.push('Нет названия'); if(!category) issues.push('Нет категории'); if(!(price>0)) issues.push('Цена<=0'); return { sku, name, category, price, weight_kg:weight, ...dims, issues: issues.join('; ') }; }); return { summary: null, rows: out }; } },
-      { id: 'sales-funnel', name: 'Воронка продаж (сводка)', description: 'Конверсия и эффективность по SKU/брендам/категориям', requiredFields: ['sku','brand','category','shows','added_to_cart','ordered_units','orders_amount_rub','delivered_units','delivered_amount_rub','visibility_index_pct','cart_to_order_conv_pct'], compute: (rows, mapping) => { const g=(r,k)=> r[mapping[k]||k]; const norm = rows.map(r=>({ category:g(r,'category'), brand:g(r,'brand'), sku:g(r,'sku'), shows:Number(g(r,'shows'))||0, atc:Number(g(r,'added_to_cart'))||0, ord:Number(g(r,'ordered_units'))||0, ordAmt:Number(g(r,'orders_amount_rub'))||0, del:Number(g(r,'delivered_units'))||0, delAmt:Number(g(r,'delivered_amount_rub'))||0, vis:Number(String(g(r,'visibility_index_pct')).replace(',','.'))||0, conv:Number(String(g(r,'cart_to_order_conv_pct')).replace(',','.'))||0 })); const total = norm.reduce((a,c)=>({ shows:a.shows+c.shows, atc:a.atc+c.atc, ord:a.ord+c.ord, ordAmt:a.ordAmt+c.ordAmt, del:a.del+c.del, delAmt:a.delAmt+c.delAmt }), {shows:0,atc:0,ord:0,ordAmt:0,del:0,delAmt:0}); const kpi=[{label:'Показы',value:total.shows},{label:'В корзину',value:total.atc},{label:'Заказано, шт',value:total.ord},{label:'Заказано, ₽',value:total.ordAmt.toFixed(0)},{label:'Доставлено, шт',value:total.del},{label:'Выручка, ₽',value:total.delAmt.toFixed(0)}]; const table = norm.map(x=>({ sku:x.sku, brand:x.brand, category:x.category, shows:x.shows, atc:x.atc, ord:x.ord, ordAmt: x.ordAmt, del:x.del, delAmt:x.delAmt, conv_pct: (x.ord && x.atc ? (x.ord/x.atc*100):0).toFixed(2) })); return { summary: { rowsCount: rows.length, columnsCount: Object.keys(table[0]||{}).length, kpi }, rows: table }; } }
+      { id: 'unit-economics-v1', name: 'Юнит‑экономика v1', description: 'Комиссия по тарифам FBY/FBS/DBS; маржа по цене/себестоимости', requiredFields: ['sku','name','category_path','price','scheme','cost'], compute: (rows, mapping) => { const m=(r,k)=> r[mapping[k]||k]; const out = rows.map(r=>{ const sku=m(r,'sku'); const name=m(r,'name'); const cat=m(r,'category_path')||m(r,'Категория на Маркете *')||m(r,'Категория'); const scheme=(String(m(r,'scheme')||'FBS').toUpperCase()); const price=Number(String(m(r,'price')).replace(/[^0-9.,-]/g,'').replace(',','.'))||0; const cost=Number(String(m(r,'cost')).replace(/[^0-9.,-]/g,'').replace(',','.'))||0; const ratePct = matchTariffForCategory(['FBY','FBS','DBS'].includes(scheme)?scheme:'FBS', cat); const commission = price * (ratePct/100); const logistics = 0; const margin = price - cost - commission - logistics; const marginPct = price? (margin/price*100):0; return { sku, name, category_path:cat, scheme, price, cost, ratePct, commission: Number(commission.toFixed(2)), logistics, margin: Number(margin.toFixed(2)), marginPct: Number(marginPct.toFixed(2)) }; }); const kpi = []; const avgMargin = out.reduce((a,c)=>a+c.margin,0)/(out.length||1); const avgPct = out.reduce((a,c)=>a+c.marginPct,0)/(out.length||1); kpi.push({label:'Позиций', value: out.length}); kpi.push({label:'Средняя маржа ₽', value: avgMargin.toFixed(0)}); kpi.push({label:'Средняя маржинальность %', value: avgPct.toFixed(2)}); return { summary: { rowsCount: out.length, columnsCount: Object.keys(out[0]||{}).length, kpi }, rows: out }; } },
+      { id: 'sales-geography', name: 'География продаж (сводка)', description: 'Агрегация по региону', requiredFields: ['region','orders_units','orders_amount_rub'], compute: (rows, mapping) => { const g=(r,k)=> r[mapping[k]||k]; const data = rows.map(r=>({ region:g(r,'region')||g(r,'Регион'), units:Number(g(r,'orders_units'))||0, amount:Number(g(r,'orders_amount_rub'))||0 })); const grouped = {}; data.forEach(x=>{ if(!x.region) return; grouped[x.region] = grouped[x.region] || { region:x.region, units:0, amount:0 }; grouped[x.region].units+=x.units; grouped[x.region].amount+=x.amount; }); const table=Object.values(grouped).sort((a,b)=>b.amount-a.amount); return { summary: { rowsCount: table.length, columnsCount: 3 }, rows: table }; } },
+      { id: 'boost-summary', name: 'Буст (сводка)', description: 'Сводные метрики по бусту, ROAS', requiredFields: ['campaign','spend_rub','orders_amount_rub'], compute: (rows, mapping) => { const g=(r,k)=> r[mapping[k]||k]; const data = rows.map(r=>({ campaign:g(r,'campaign')||g(r,'Кампания'), spend:Number(g(r,'spend_rub'))||0, revenue:Number(g(r,'orders_amount_rub'))||0 })); const grouped={}; data.forEach(x=>{ const key=x.campaign||'—'; grouped[key]=grouped[key]||{ campaign:key, spend:0, revenue:0 }; grouped[key].spend+=x.spend; grouped[key].revenue+=x.revenue; }); const table=Object.values(grouped).map(x=>({ ...x, roas: x.spend? Number((x.revenue/x.spend).toFixed(2)) : null })).sort((a,b)=>(b.revenue-a.revenue)); return { summary: { rowsCount: table.length, columnsCount: 4 }, rows: table }; } },
+      { id: 'sales-funnel', name: 'Воронка продаж (сводка)', description: 'Конверсия и эффективность по SKU/брендам/категориям', requiredFields: ['sku','brand','category','shows','added_to_cart','ordered_units','orders_amount_rub','delivered_units','delivered_amount_rub','visibility_index_pct','cart_to_order_conv_pct'], compute: (rows, mapping) => { const g=(r,k)=> r[mapping[k]||k]; const norm = rows.map(r=>({ category:g(r,'category'), brand:g(r,'brand'), sku:g(r,'sku'), shows:Number(g(r,'shows'))||0, atc:Number(g(r,'added_to_cart'))||0, ord:Number(g(r,'ordered_units'))||0, ordAmt:Number(g(r,'orders_amount_rub'))||0, del:Number(g(r,'delivered_units'))||0, delAmt:Number(g(r,'delivered_amount_rub'))||0, vis:Number(String(g(r,'visibility_index_pct')).replace(',','.'))||0, conv:Number(String(g(r,'cart_to_order_conv_pct')).replace(',','.'))||0 })); const total = norm.reduce((a,c)=>({ shows:a.shows+c.shows, atc:a.atc+c.atc, ord:a.ord+c.ord, ordAmt:a.ordAmt+c.ordAmt, del:a.del+c.del, delAmt:a.delAmt+c.delAmt }), {shows:0,atc:0,ord:0,ordAmt:0,del:0,delAmt:0}); const kpi=[{label:'Показы',value:total.shows},{label:'В корзину',value:total.atc},{label:'Заказано, шт',value:total.ord},{label:'Заказано, ₽',value:total.ordAmt.toFixed(0)},{label:'Доставлено, шт',value:total.del},{label:'Выручка, ₽',value:total.delAmt.toFixed(0)}]; const table = norm.map(x=>({ sku:x.sku, brand:x.brand, category:x.category, shows:x.shows, atc:x.atc, ord:x.ord, ordAmt: x.ordAmt, del:x.del, delAmt:x.delAmt, conv_pct: (x.ord && x.atc ? (x.ord/x.atc*100):0).toFixed(2) })).sort((a,b)=>b.delAmt-a.delAmt); return { summary: { rowsCount: rows.length, columnsCount: Object.keys(table[0]||{}).length, kpi }, rows: table }; } }
     ];
 
     let selectedReportId = reportsRegistry[0]?.id; let currentReportRows = [];
@@ -999,6 +1014,60 @@
       if (/географ/i.test(sheetName) || has('регион')) return { type: 'geography', label: 'География продаж' };
       if (has('ваш sku') || has('категория на маркете') || has('габариты')) return { type: 'catalog', label: 'Каталог товаров' };
       return { type: 'generic', label: 'Данные' };
+    }
+
+    // Tariffs loader and category matching
+    const tariffsByScheme = { FBY: null, FBS: null, DBS: null };
+    async function tryFetchXlsx(pathRel) {
+      try { const res = await fetch(pathRel); if (!res.ok) return null; const buf = await res.arrayBuffer(); return XLSX.read(buf, { type: 'array' }); } catch { return null; }
+    }
+    function parseTariffTable(wb) {
+      if (!wb) return null;
+      const name = wb.SheetNames?.[0]; const ws = wb.Sheets?.[name]; if (!ws) return null;
+      const rows = rowsFromSheetSmart(ws);
+      // Expect columns Category (Уровни 1..7) + Тариф с 1 июля 2025
+      return rows.map(r => ({
+        levels: [1,2,3,4,5,6,7].map(i => r[`Категория (Уровень ${i})`] || null).filter(Boolean),
+        ratePct: Number(String(r['Тариф с 1 июля 2025']).replace(',','.')) || 0,
+      }));
+    }
+    function matchTariffForCategory(scheme, categoryPath) {
+      const list = tariffsByScheme[scheme]; if (!list || !categoryPath) return 0;
+      const parts = String(categoryPath).split('/').map(s=>s.trim()).filter(Boolean);
+      let best = 0; let bestDepth = -1;
+      for (const t of list) {
+        const depth = t.levels.length;
+        if (depth===0) continue;
+        const ok = t.levels.every((lvl, idx) => (parts[idx]||'').toLowerCase() === String(lvl).toLowerCase());
+        if (ok && depth > bestDepth) { bestDepth = depth; best = t.ratePct; }
+      }
+      return best; // percent
+    }
+    async function loadBuiltInTariffs() {
+      if (tariffsByScheme.FBY || tariffsByScheme.FBS || tariffsByScheme.DBS) return;
+      const [wbfby, wbfbs, wbdbs] = await Promise.all([
+        tryFetchXlsx('FBY.xlsx'), tryFetchXlsx('FBS.xlsx'), tryFetchXlsx('DBS.xlsx')
+      ]);
+      tariffsByScheme.FBY = parseTariffTable(wbfby);
+      tariffsByScheme.FBS = parseTariffTable(wbfbs);
+      tariffsByScheme.DBS = parseTariffTable(wbdbs);
+    }
+
+    // Best sheet selection
+    function scoreSheet(ws) {
+      const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+      if (!matrix || !matrix.length) return -Infinity;
+      const idx = detectHeaderRow(matrix);
+      const header = (matrix[idx]||[]).map(normalizeHeaderCell);
+      const hints = ['SKU','Категория','Название','Цена','Индекс видимости','Доставлено'];
+      const hit = header.reduce((a,c)=> a + (hints.some(h=>c.toLowerCase().includes(h.toLowerCase()))?1:0), 0);
+      const nonEmpty = header.filter(Boolean).length;
+      return hit*10 + nonEmpty;
+    }
+    function selectBestSheet(wb) {
+      let best = wb.SheetNames?.[0]; let bestScore=-Infinity;
+      (wb.SheetNames||[]).forEach(n=>{ const s=scoreSheet(wb.Sheets[n]); if (s>bestScore) { bestScore=s; best=n; } });
+      return best;
     }
   </script>
 </body>
