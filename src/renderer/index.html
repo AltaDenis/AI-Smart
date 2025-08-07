@@ -705,7 +705,7 @@
       sheetModal.classList.add('active');
       document.body.classList.add('modal-open');
       return new Promise((resolve)=>{
-        applySheet.onclick = ()=>{ const sel = sheetSelect.value; const ws = workbook.Sheets[sel]; const rows = rowsFromSheetSmart(ws); currentData = rows; const cls = classifyDataset(rows, sel); const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${tempFileName}», лист «${sel}»: ${rows.length||0} строк. Тип: ${cls.label}`; sheetModal.classList.remove('active'); document.body.classList.remove('modal-open'); resolve(true); };
+        applySheet.onclick = async ()=>{ const sel = sheetSelect.value; const ws = workbook.Sheets[sel]; const rows = rowsFromSheetSmart(ws); currentData = rows; const cls = classifyDataset(rows, sel); const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${tempFileName}», лист «${sel}»: ${rows.length||0} строк. Тип: ${cls.label}`; try { if (window.electronAPI?.datasets?.create) { await window.electronAPI.datasets.create(`${tempFileName} [${sel}]`, rows, { from: 'single', type: cls.type }); } } catch {} sheetModal.classList.remove('active'); document.body.classList.remove('modal-open'); const reportsBtn = document.querySelector('[data-tab="reports"]'); if (reportsBtn) { reportsBtn.click(); setTimeout(()=>{ try{ renderReports(); }catch{} }, 0); } resolve(true); };
         const cancel = ()=>{ sheetModal.classList.remove('active'); document.body.classList.remove('modal-open'); resolve(false); };
         cancelSheet.onclick = cancel; closeSheetModal.onclick = cancel;
         sheetModal.onclick = (e)=>{ if (e.target===sheetModal) cancel(); };
@@ -783,7 +783,7 @@
       });
     }
 
-    document.querySelector('[data-tab="datasets"]').addEventListener('click', () => { setTimeout(renderDatasets, 0); });
+    { const dtab = document.querySelector('[data-tab="datasets"]'); if (dtab) dtab.addEventListener('click', () => { setTimeout(renderDatasets, 0); }); }
     const datasetsSearch = document.getElementById('datasetsSearch'); if (datasetsSearch) datasetsSearch.addEventListener('input', () => renderDatasets());
     const toggleDensityBtn = document.getElementById('toggleDensity'); if (toggleDensityBtn) toggleDensityBtn.addEventListener('click', ()=>{ const content = document.getElementById('datasetsContent'); content?.classList.toggle('compact'); });
 
@@ -801,14 +801,34 @@
 
     async function renderReports() {
       const gallery = document.getElementById('reportsGallery');
-             gallery.innerHTML = reportsRegistry.map(r => `
+      // Try build tariffs from existing datasets if not loaded
+      try {
+        if (!tariffsByScheme.FBY && window.electronAPI?.datasets?.list) {
+          const items = await window.electronAPI.datasets.list();
+          const guessIsTariff = (i)=> (i?.source?.type==='tariffs') || /\bFBY\b|\bFBS\b|\bDBS\b/i.test(i?.name||'');
+          const tsets = items.filter(guessIsTariff).slice(0,6);
+          for (const it of tsets) {
+            const data = await window.electronAPI.datasets.get(it.id);
+            const rows = data?.rows || [];
+            const wbRows = rows; // already objects
+            const list = wbRows.map(r=>({
+              levels: [1,2,3,4,5,6,7].map(k=> r[`Категория (Уровень ${k})`] || null).filter(Boolean),
+              ratePct: Number(String(r['Тариф с 1 июля 2025']||'').replace(',','.')) || 0
+            }));
+            if (/FBY/i.test(it.name)) tariffsByScheme.FBY = list;
+            else if (/FBS/i.test(it.name)) tariffsByScheme.FBS = list;
+            else if (/DBS/i.test(it.name)) tariffsByScheme.DBS = list;
+          }
+        }
+      } catch {}
+      gallery.innerHTML = reportsRegistry.map(r => `
         <div data-report-id="${r.id}" class="report-card">
           <div style="font-weight:600; margin-bottom:6px;">${r.name}</div>
           <div style="color:var(--text-secondary); font-size:13px;">${r.description}</div>
         </div>
       `).join('');
       gallery.querySelectorAll('[data-report-id]').forEach(card => { card.addEventListener('click', async () => { selectedReportId = card.getAttribute('data-report-id'); gallery.querySelectorAll('[data-report-id]').forEach(c => c.classList.remove('active')); card.classList.add('active'); await updateMappingPanel(); await loadExistingMapping(); const rr=document.getElementById('reportResult'); const rk=document.getElementById('reportKPI'); const re=document.getElementById('reportEmpty'); if (rr) rr.style.display='none'; if (rk) rk.style.display='none'; if (re) re.style.display='block'; }); });
-
+ 
       const select = document.getElementById('reportDatasetSelect'); const items = await window.electronAPI.datasets.list(); select.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.rowsCount})</option>`).join('');
       await updateMappingPanel();
       select.addEventListener('change', async () => { await updateMappingPanel(); await loadExistingMapping(); const rr=document.getElementById('reportResult'); const rk=document.getElementById('reportKPI'); const re=document.getElementById('reportEmpty'); if (rr) rr.style.display='none'; if (rk) rk.style.display='none'; if (re) re.style.display='block'; });
@@ -839,8 +859,42 @@
     }
 
     function autoMapColumns(availableFields) {
-      const synonyms = { price: ['price','цена','Стоимость продажи','Продажа'], cost: ['cost','себестоимость','Закуп','Закупка'], commission: ['commission','комиссия'], logistics: ['logistics','логистика','доставка','тариф доставки'] };
-      document.querySelectorAll('[data-map-key]')?.forEach(sel => { const key = sel.getAttribute('data-map-key'); const candidates = (synonyms[key] || []).map(s => s.toLowerCase()); const match = availableFields.find(f => candidates.includes(f.toLowerCase())) || availableFields.find(f => f.toLowerCase() === key); if (match) sel.value = match; });
+      const synonyms = {
+        // unit
+        price: ['price','цена','цена *','стоимость продажи','продажа'],
+        cost: ['cost','себестоимость','закуп','закупка'],
+        commission: ['commission','комиссия'],
+        logistics: ['logistics','логистика','доставка','тариф доставки'],
+        scheme: ['scheme','схема работы','fbs','fby','dbs'],
+        // catalog
+        sku: ['sku','ваш sku','ваш sku *','артикул продавца','ваш sku *_1'],
+        name: ['name','название товара','название товара *','наименование'],
+        category: ['category','категория','категория на маркете *','категория_1'],
+        category_path: ['категория на маркете *','категория'],
+        weight_kg: ['вес с упаковкой, кг','вес кг','weight','weight_kg'],
+        dimensions_cm: ['габариты с упаковкой, см','габариты'],
+        // funnel
+        brand: ['бренд','brand'],
+        shows: ['показы моих товаров, шт.','показы','shows'],
+        added_to_cart: ['добавления в корзину, шт.','добавления в корзину','added_to_cart'],
+        ordered_units: ['заказанные товары, шт.','ordered_units'],
+        orders_amount_rub: ['заказано товаров на сумму, ₽','orders_amount_rub'],
+        delivered_units: ['доставлено за период, шт.','delivered_units'],
+        delivered_amount_rub: ['доставлено за период на сумму, ₽','delivered_amount_rub'],
+        visibility_index_pct: ['индекс видимости, %'],
+        cart_to_order_conv_pct: ['конверсия из корзины в заказ, %'],
+        // geography
+        region: ['регион','region'],
+        // boost
+        campaign: ['кампания','campaign'],
+        spend_rub: ['расход','spend','spend_rub']
+      };
+      document.querySelectorAll('[data-map-key]')?.forEach(sel => {
+        const key = sel.getAttribute('data-map-key');
+        const candidates = (synonyms[key] || []).map(s => s.toLowerCase());
+        const match = availableFields.find(f => candidates.includes(f.toLowerCase())) || availableFields.find(f => f.toLowerCase() === key);
+        if (match) sel.value = match;
+      });
     }
 
     async function runSelectedReport() {
