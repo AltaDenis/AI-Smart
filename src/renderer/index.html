@@ -92,6 +92,10 @@
     .table th, .table td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
     .table th { position: sticky; top: 0; background: var(--bg-secondary); z-index: 1; }
     .table tr:hover td { background: rgba(255,255,255,0.02); }
+    .tab-content { display: none; animation: fadeIn 0.4s ease-out; /* height removed for natural flow */ overflow-y: auto; padding-right: 10px; position: relative; }
+    .tab-content::-webkit-scrollbar { width: 6px; }
+    .tab-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .tab-content.active { display: block !important; }
   </style>
 </head>
 <body>
@@ -406,6 +410,12 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       try {
+        // Ensure only the dashboard tab is active on load
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        const dash = document.getElementById('dashboard'); if (dash) dash.classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        const dashBtn = document.querySelector('.nav-item[data-tab="dashboard"]'); if (dashBtn) dashBtn.classList.add('active');
+
         const savedUserName = await window.electronAPI.getSetting('userName');
         const savedUserEmail = await window.electronAPI.getSetting('userEmail');
         const savedTheme = await window.electronAPI.getSetting('theme');
