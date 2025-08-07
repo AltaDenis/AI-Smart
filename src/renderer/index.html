@@ -117,6 +117,71 @@
     .tab-content.active { display: block !important; }
     .hero-rotate { transition: opacity 300ms ease, transform 300ms ease; }
     .hero-hidden { opacity: 0; transform: translateY(8px); }
+    /* Premium UI additions */
+    .btn { cursor: pointer; border: none; outline: none; padding: 10px 14px; border-radius: var(--radius-md); color: #fff; background: linear-gradient(180deg, var(--accent-blue), var(--accent-active)); box-shadow: 0 6px 18px rgba(42,127,255,0.25); transition: transform var(--transition), filter var(--transition), box-shadow var(--transition); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+    .header { display:flex; align-items:center; justify-content: space-between; margin-bottom: 16px; }
+    .page-title { font-size: 22px; font-weight: 700; letter-spacing: 0.2px; }
+    .user-profile { display:flex; align-items:center; gap:10px; cursor:pointer; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-blue); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; box-shadow: var(--glow); }
+    /* Loader overlay */
+    .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); z-index: 1200; }
+    .overlay.active { display: flex; }
+    .spinner { width: 42px; height: 42px; border: 3px solid rgba(255,255,255,0.2); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    /* Settings modal */
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); z-index: 1500; }
+    .modal.active { display: flex; }
+    .modal-content { width: 680px; max-width: 92vw; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--card-shadow); overflow: hidden; }
+    .modal-header { display:flex; align-items:center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    .modal-title { font-weight: 700; }
+    .modal-close { background: transparent; border: 1px solid var(--border); color: var(--text-primary); border-radius: 10px; width: 32px; height: 32px; cursor: pointer; }
+    .modal-body { padding: 14px; }
+    .modal-footer { display:flex; gap:8px; justify-content: flex-end; padding: 12px 14px; border-top: 1px solid var(--border); }
+    .settings-form { display:grid; gap: 12px; }
+    .form-group { display:grid; gap:6px; }
+    .form-group label { color: var(--text-secondary); font-size: 13px; }
+    .settings-form input[type="text"], .settings-form input[type="email"], .settings-form input[type="color"] { height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-tertiary); color: var(--text-primary); padding: 0 10px; }
+    .color-picker { display:flex; align-items:center; gap:10px; }
+    .color-preview { width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border); }
+    /* Toasts */
+    .toast-root { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 1600; }
+    .toast { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; box-shadow: var(--card-shadow); animation: toastIn 180ms ease-out; }
+    .toast.success { border-color: rgba(34,197,94,0.45); }
+    .toast.error { border-color: rgba(239,68,68,0.45); }
+    @keyframes toastIn { from { transform: translateY(6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    /* File upload */
+    .file-upload { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; border:1px dashed var(--border); border-radius: 12px; text-align:center; min-height: 160px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); }
+    .file-upload-icon { font-size: 32px; color: var(--accent-blue); }
+    /* Dashboard hero */
+    .dashboard-placeholder { display:flex; flex-direction:column; align-items:flex-start; gap: 8px; padding: 18px; }
+    .dashboard-placeholder .greeting { font-size: 18px; font-weight: 600; }
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 860px) {
+      :root { --sidebar-width: 72px; }
+      .sidebar .nav-item span, .nav-section-title { display: none; }
+      .main-content { margin-left: var(--sidebar-width); padding: 18px; }
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+    /* Inputs focus */
+    .input:focus, .settings-form input:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(42,127,255,0.15); }
+    .input.error { border-color: var(--error); box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+    /* Danger icon button */
+    .icon-btn.danger { border-color:#3b1f1f; color:#ff6b6b; }
+    /* Report cards */
+    .report-card { border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; cursor:pointer; background: var(--bg-secondary); }
+    .report-card:hover { background: rgba(255,255,255,0.03); }
+    .report-card.active { outline: 2px solid var(--accent-blue); }
+    /* Empty blocks */
+    .empty { text-align:center; color: var(--text-secondary); padding: 24px; border:1px dashed var(--border); border-radius:12px; }
+    /* Skeletons */
+    .skl { display:block; width: 100%; height: 12px; border-radius: 6px; background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06)); background-size: 200% 100%; animation: skl 1.2s ease-in-out infinite; }
+    @keyframes skl { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    /* Prevent body scroll when modal open */
+    body.modal-open { overflow: hidden; }
   </style>
 </head>
 <body>
@@ -171,6 +236,21 @@
         <div class="greeting" id="greetingText">Добро пожаловать!</div>
         <p class="subtext hero-rotate" id="subtext">Принимайте решения на основе точной аналитики и прогнозов.</p>
       </div>
+      <div class="kpi-grid" id="dashKpi" style="margin-top: 8px;">
+        <div class="kpi-card glass"><div class="kpi-label">Наборов данных</div><div class="kpi-value">—</div></div>
+        <div class="kpi-card glass"><div class="kpi-label">Строк всего</div><div class="kpi-value">—</div></div>
+        <div class="kpi-card glass"><div class="kpi-label">Средний размер</div><div class="kpi-value">—</div></div>
+        <div class="kpi-card glass"><div class="kpi-label">Последний набор</div><div class="kpi-value">—</div></div>
+      </div>
+      <div class="card section glass" style="margin-top:12px;">
+        <div style="font-weight:600; margin-bottom:8px;">Быстрые действия</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <button class="btn" id="qaImport"><i class="ti ti-upload"></i>&nbsp;Импорт данных</button>
+          <button class="btn btn-secondary" id="qaDatasets"><i class="ti ti-database"></i>&nbsp;Наборы данных</button>
+          <button class="btn btn-secondary" id="qaReports"><i class="ti ti-file-report"></i>&nbsp;Отчёты</button>
+          <button class="btn btn-secondary" id="qaSettings"><i class="ti ti-settings"></i>&nbsp;Настройки</button>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -211,9 +291,12 @@
           </div>
         </div>
         <div id="datasetsList" class="zebra" style="margin-bottom:16px; overflow:auto; border:1px solid var(--border); border-radius:10px;">
-          <table class="table zebra" id="datasetsTable">
-            <thead><tr><th>Имя набора</th><th>Дата</th><th>Строк</th><th style="width:160px">Действия</th></tr></thead>
-            <tbody></tbody>
+                     <table class="table zebra" id="datasetsTable">
+            <thead><tr><th>Имя набора</th><th>Дата</th><th>Строк</th><th style="width:180px">Действия</th></tr></thead>
+            <tbody>
+              <tr><td colspan="4"><div class="skl"></div></td></tr>
+              <tr><td colspan="4"><div class="skl" style="width:70%"></div></td></tr>
+            </tbody>
           </table>
         </div>
         <div id="datasetPreview"></div>
@@ -381,24 +464,25 @@
     const closeSettings = document.getElementById('closeSettings');
     const cancelSettings = document.getElementById('cancelSettings');
 
-    [openSettings, openSettingsNav, closeSettings, cancelSettings].forEach(el => {
+         [openSettings, openSettingsNav, closeSettings, cancelSettings].forEach(el => {
       if (!el) return;
       el.addEventListener('click', () => {
-        const shouldOpen = (el === openSettings);
-        settingsModal.classList.toggle('active', shouldOpen || el === openSettingsNav);
+        const shouldOpen = (el === openSettings) || (el === openSettingsNav);
+        settingsModal.classList.toggle('active', shouldOpen);
+        document.body.classList.toggle('modal-open', shouldOpen);
       });
     });
     // Close on overlay click
-    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.remove('active'); });
+    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) { settingsModal.classList.remove('active'); document.body.classList.remove('modal-open'); } });
     // Close on ESC
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') settingsModal.classList.remove('active'); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { settingsModal.classList.remove('active'); document.body.classList.remove('modal-open'); } });
     // Global click outside drawer content
     document.addEventListener('click', (e) => {
       const content = document.querySelector('.modal-content');
       if (!content) return;
       const isDrawer = content.contains(e.target);
       const isOpenBtn = e.target.closest && e.target.closest('#openSettings, #openSettingsNav');
-      if (settingsModal.classList.contains('active') && !isDrawer && !isOpenBtn) settingsModal.classList.remove('active');
+      if (settingsModal.classList.contains('active') && !isDrawer && !isOpenBtn) { settingsModal.classList.remove('active'); document.body.classList.remove('modal-open'); }
     }, true);
 
     function getInputs(prefix) {
@@ -462,6 +546,27 @@
         }
         setInterval(nextPhrase, 4500);
 
+        // Dashboard KPI calculation
+        try {
+          const items = await window.electronAPI.datasets.list();
+          const totalDatasets = items.length;
+          const totalRows = items.reduce((a,c)=> a + (c.rowsCount||0), 0);
+          const avgSize = totalDatasets ? Math.round(totalRows / totalDatasets) : 0;
+          const lastItem = items[0];
+          const kpi = document.getElementById('dashKpi');
+          if (kpi) {
+            const values = [totalDatasets, totalRows, avgSize, lastItem ? lastItem.name : '—'];
+            kpi.querySelectorAll('.kpi-value').forEach((el, idx)=> el.textContent = values[idx] ?? '—');
+          }
+        } catch {}
+
+        // Quick actions
+        const qaImport = document.getElementById('qaImport'); if (qaImport) qaImport.addEventListener('click', ()=>{ document.querySelector('[data-tab="unit-economics"]').click(); setTimeout(()=>document.getElementById('selectFileBtn')?.click(), 100); });
+        const qaDatasets = document.getElementById('qaDatasets'); if (qaDatasets) qaDatasets.addEventListener('click', ()=> document.querySelector('[data-tab="datasets"]').click());
+        const qaReports = document.getElementById('qaReports'); if (qaReports) qaReports.addEventListener('click', ()=> document.querySelector('[data-tab="reports"]').click());
+        const qaSettings = document.getElementById('qaSettings'); if (qaSettings) qaSettings.addEventListener('click', ()=> settingsModal.classList.add('active'));
+
+
         const savedUserName = await window.electronAPI.getSetting('userName');
         const savedUserEmail = await window.electronAPI.getSetting('userEmail');
         const savedTheme = await window.electronAPI.getSetting('theme');
@@ -469,7 +574,7 @@
         if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
         if (savedColor) applyAccent(savedColor);
         const setBgIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.style.backgroundColor = val; };
-        const setTextIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        const setTextIfExists = (id, val) => { const el = document.getElementById(id); if (!el) return; if ('value' in el) { el.value = val; } else { el.textContent = val; } };
         if (savedUserName) { setTextIfExists('userNamePage', savedUserName); setTextIfExists('userNameModal', savedUserName); const avatar = document.querySelector('.user-avatar'); if (avatar) avatar.textContent = savedUserName[0].toUpperCase(); const greeting = document.getElementById('greetingText'); if (greeting) greeting.textContent = `Добро пожаловать, ${savedUserName}!`; }
         if (savedUserEmail) { setTextIfExists('userEmailPage', savedUserEmail); setTextIfExists('userEmailModal', savedUserEmail); }
         const color = savedColor || '#2a7fff'; ['Page', 'Modal'].forEach(prefix => { setTextIfExists(`colorValue${prefix}`, color); setBgIfExists(`colorPreview${prefix}`, color); });
@@ -545,8 +650,8 @@
       if (!tbody || !prevEl) return;
       let items = await window.electronAPI.datasets.list();
       if (q) items = items.filter(i => i.name.toLowerCase().includes(q));
-      if (!items || items.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-secondary)">Нет сохранённых наборов данных</td></tr>'; prevEl.innerHTML=''; return; }
-      tbody.innerHTML = items.map(i => `<tr data-id="${i.id}"><td>${i.name}</td><td>${new Date(i.createdAt).toLocaleString()}</td><td>${i.rowsCount}</td><td><div style=\"display:flex; gap:6px;\"><button class=\"icon-btn\" title=\"Предпросмотр\" data-action=\"preview\"><i class=\"ti ti-eye\"></i></button><button class=\"icon-btn\" title=\"Переименовать\" data-action=\"rename\"><i class=\"ti ti-pencil\"></i></button><button class=\"icon-btn\" title=\"Удалить\" data-action=\"delete\" style=\"border-color:#3b1f1f; color:#ff6b6b\"><i class=\"ti ti-trash\"></i></button></div></td></tr>`).join('');
+             if (!items || items.length === 0) { tbody.innerHTML = '<tr><td colspan="4"><div class="empty"><i class="ti ti-database"></i>Нет сохранённых наборов данных</div></td></tr>'; prevEl.innerHTML=''; return; }
+      tbody.innerHTML = items.map(i => `<tr data-id="${i.id}"><td>${i.name}</td><td>${new Date(i.createdAt).toLocaleString()}</td><td>${i.rowsCount}</td><td><div style=\"display:flex; gap:6px;\"><button class=\"icon-btn\" title=\"Предпросмотр\" data-action=\"preview\"><i class=\"ti ti-eye\"></i></button><button class=\"icon-btn\" title=\"Переименовать\" data-action=\"rename\"><i class=\"ti ti-pencil\"></i></button><button class=\"icon-btn danger\" title=\"Удалить\" data-action=\"delete\"><i class=\"ti ti-trash\"></i></button></div></td></tr>`).join('');
       tbody.querySelectorAll('[data-action]')?.forEach(btn => {
         btn.addEventListener('click', async () => {
           const row = btn.closest('tr'); const id = row.getAttribute('data-id'); const action = btn.getAttribute('data-action');
@@ -591,13 +696,13 @@
 
     async function renderReports() {
       const gallery = document.getElementById('reportsGallery');
-      gallery.innerHTML = reportsRegistry.map(r => `
-        <div data-report-id="${r.id}" style="border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; cursor:pointer; background: var(--bg-secondary);">
+             gallery.innerHTML = reportsRegistry.map(r => `
+        <div data-report-id="${r.id}" class="report-card">
           <div style="font-weight:600; margin-bottom:6px;">${r.name}</div>
           <div style="color:var(--text-secondary); font-size:13px;">${r.description}</div>
         </div>
       `).join('');
-      gallery.querySelectorAll('[data-report-id]').forEach(card => { card.addEventListener('click', async () => { selectedReportId = card.getAttribute('data-report-id'); gallery.querySelectorAll('[data-report-id]').forEach(c => c.style.outline = 'none'); card.style.outline = '2px solid var(--accent-blue)'; await updateMappingPanel(); await loadExistingMapping(); const rr=document.getElementById('reportResult'); const rk=document.getElementById('reportKPI'); const re=document.getElementById('reportEmpty'); if (rr) rr.style.display='none'; if (rk) rk.style.display='none'; if (re) re.style.display='block'; }); });
+      gallery.querySelectorAll('[data-report-id]').forEach(card => { card.addEventListener('click', async () => { selectedReportId = card.getAttribute('data-report-id'); gallery.querySelectorAll('[data-report-id]').forEach(c => c.classList.remove('active')); card.classList.add('active'); await updateMappingPanel(); await loadExistingMapping(); const rr=document.getElementById('reportResult'); const rk=document.getElementById('reportKPI'); const re=document.getElementById('reportEmpty'); if (rr) rr.style.display='none'; if (rk) rk.style.display='none'; if (re) re.style.display='block'; }); });
 
       const select = document.getElementById('reportDatasetSelect'); const items = await window.electronAPI.datasets.list(); select.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (${i.rowsCount})</option>`).join('');
       await updateMappingPanel();
