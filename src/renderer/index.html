@@ -94,6 +94,8 @@
     .tab-content::-webkit-scrollbar { width: 6px; }
     .tab-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     .tab-content.active { display: block !important; }
+    .hero-rotate { transition: opacity 300ms ease, transform 300ms ease; }
+    .hero-hidden { opacity: 0; transform: translateY(8px); }
   </style>
 </head>
 <body>
@@ -146,7 +148,7 @@
       </div>
       <div class="dashboard-placeholder">
         <div class="greeting" id="greetingText">Добро пожаловать!</div>
-        <p class="subtext" id="subtext">Принимайте решения на основе точной аналитики и прогнозов.</p>
+        <p class="subtext hero-rotate" id="subtext">Принимайте решения на основе точной аналитики и прогнозов.</p>
       </div>
       </div>
     </div>
@@ -402,6 +404,26 @@
         const dash = document.getElementById('dashboard'); if (dash) dash.classList.add('active');
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         const dashBtn = document.querySelector('.nav-item[data-tab="dashboard"]'); if (dashBtn) dashBtn.classList.add('active');
+
+        // Start hero phrases rotation
+        const phrases = [
+          'Принимайте решения на основе точной аналитики и прогнозов.',
+          'Свяжите данные и отчёты в один поток — быстро и прозрачно.',
+          'Экономьте время: автоматизируйте отчёты и выгрузки в один клик.',
+          'Настройте интерфейс и метрики под вашу команду.'
+        ];
+        const sub = document.getElementById('subtext');
+        let idx = 0;
+        function nextPhrase() {
+          if (!sub) return;
+          sub.classList.add('hero-hidden');
+          setTimeout(() => {
+            idx = (idx + 1) % phrases.length;
+            sub.textContent = phrases[idx];
+            sub.classList.remove('hero-hidden');
+          }, 300);
+        }
+        setInterval(nextPhrase, 4500);
 
         const savedUserName = await window.electronAPI.getSetting('userName');
         const savedUserEmail = await window.electronAPI.getSetting('userEmail');
