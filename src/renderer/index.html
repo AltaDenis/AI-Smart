@@ -156,6 +156,16 @@
     /* Dashboard hero */
     .dashboard-placeholder { display:flex; flex-direction:column; align-items:flex-start; gap: 8px; padding: 18px; }
     .dashboard-placeholder .greeting { font-size: 18px; font-weight: 600; }
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 860px) {
+      :root { --sidebar-width: 72px; }
+      .sidebar .nav-item span, .nav-section-title { display: none; }
+      .main-content { margin-left: var(--sidebar-width); padding: 18px; }
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -209,6 +219,21 @@
       <div class="dashboard-placeholder">
         <div class="greeting" id="greetingText">Добро пожаловать!</div>
         <p class="subtext hero-rotate" id="subtext">Принимайте решения на основе точной аналитики и прогнозов.</p>
+      </div>
+      <div class="kpi-grid" id="dashKpi" style="margin-top: 8px;">
+        <div class="kpi-card glass"><div class="kpi-label">Наборов данных</div><div class="kpi-value">—</div></div>
+        <div class="kpi-card glass"><div class="kpi-label">Строк всего</div><div class="kpi-value">—</div></div>
+        <div class="kpi-card glass"><div class="kpi-label">Средний размер</div><div class="kpi-value">—</div></div>
+        <div class="kpi-card glass"><div class="kpi-label">Последний набор</div><div class="kpi-value">—</div></div>
+      </div>
+      <div class="card section glass" style="margin-top:12px;">
+        <div style="font-weight:600; margin-bottom:8px;">Быстрые действия</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <button class="btn" id="qaImport"><i class="ti ti-upload"></i>&nbsp;Импорт данных</button>
+          <button class="btn btn-secondary" id="qaDatasets"><i class="ti ti-database"></i>&nbsp;Наборы данных</button>
+          <button class="btn btn-secondary" id="qaReports"><i class="ti ti-file-report"></i>&nbsp;Отчёты</button>
+          <button class="btn btn-secondary" id="qaSettings"><i class="ti ti-settings"></i>&nbsp;Настройки</button>
+        </div>
       </div>
       </div>
     </div>
@@ -500,6 +525,27 @@
           }, 300);
         }
         setInterval(nextPhrase, 4500);
+
+        // Dashboard KPI calculation
+        try {
+          const items = await window.electronAPI.datasets.list();
+          const totalDatasets = items.length;
+          const totalRows = items.reduce((a,c)=> a + (c.rowsCount||0), 0);
+          const avgSize = totalDatasets ? Math.round(totalRows / totalDatasets) : 0;
+          const lastItem = items[0];
+          const kpi = document.getElementById('dashKpi');
+          if (kpi) {
+            const values = [totalDatasets, totalRows, avgSize, lastItem ? lastItem.name : '—'];
+            kpi.querySelectorAll('.kpi-value').forEach((el, idx)=> el.textContent = values[idx] ?? '—');
+          }
+        } catch {}
+
+        // Quick actions
+        const qaImport = document.getElementById('qaImport'); if (qaImport) qaImport.addEventListener('click', ()=>{ document.querySelector('[data-tab="unit-economics"]').click(); setTimeout(()=>document.getElementById('selectFileBtn')?.click(), 100); });
+        const qaDatasets = document.getElementById('qaDatasets'); if (qaDatasets) qaDatasets.addEventListener('click', ()=> document.querySelector('[data-tab="datasets"]').click());
+        const qaReports = document.getElementById('qaReports'); if (qaReports) qaReports.addEventListener('click', ()=> document.querySelector('[data-tab="reports"]').click());
+        const qaSettings = document.getElementById('qaSettings'); if (qaSettings) qaSettings.addEventListener('click', ()=> settingsModal.classList.add('active'));
+
 
         const savedUserName = await window.electronAPI.getSetting('userName');
         const savedUserEmail = await window.electronAPI.getSetting('userEmail');
