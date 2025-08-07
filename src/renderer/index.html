@@ -416,7 +416,7 @@
     </div>
   </div>
 
-  <!-- Command palette -->
+    <!-- Command palette -->
   <div class="cmdpal" id="cmdpal">
     <div class="cmdpanel">
       <input class="cmdinput" id="cmdInput" placeholder="Что вы хотите сделать? (например, Перейти в Данные)"/>
@@ -424,6 +424,23 @@
     </div>
   </div>
 
+  <!-- Safety nav handler to ensure tabs always switch even if later JS fails -->
+  <script>
+    (function(){
+      document.addEventListener('click', function(e){
+        var el = e.target && e.target.closest ? e.target.closest('.nav-item[data-tab]') : null;
+        if (!el) return;
+        var tabs = document.querySelectorAll('.tab-content');
+        for (var i=0;i<tabs.length;i++) tabs[i].classList.remove('active');
+        var navs = document.querySelectorAll('.nav-item');
+        for (var j=0;j<navs.length;j++) navs[j].classList.remove('active');
+        el.classList.add('active');
+        var t = document.getElementById(el.dataset.tab);
+        if (t) t.classList.add('active');
+      });
+    })();
+  </script>
+ 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>
@@ -933,23 +950,8 @@
       if (e.key==='Enter') { e.preventDefault(); const idx = Number(items[active]?.getAttribute('data-idx'))||0; commands[idx].run(); closeCmdPal(); }
     });
 
-    function bindTabs() {
-      const items = document.querySelectorAll('.nav-item[data-tab]');
-      items.forEach(item => {
-        item.addEventListener('click', () => {
-          const targetId = item.dataset.tab;
-          if (!targetId) return;
-          document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-          document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-          item.classList.add('active');
-          const target = document.getElementById(targetId);
-          if (target) target.classList.add('active');
-          settingsModal.classList.remove('active');
-          document.body.classList.remove('modal-open');
-        });
-      });
-    }
-    bindTabs();
+    // bindTabs disabled in favor of delegated handler above to avoid double-binding
+    // bindTabs();
 
     async function persistAccent(color) {
       try { await window.electronAPI.setSetting('accentColor', color); } catch {}
