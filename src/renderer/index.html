@@ -474,6 +474,24 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>
+    // Ensure XLSX is available before usage (polls up to timeoutMs)
+    async function ensureXlsx(timeoutMs = 3000) {
+      return new Promise((resolve) => {
+        if (window.XLSX && XLSX?.utils) return resolve(true);
+        const start = Date.now();
+        const timer = setInterval(() => {
+          if (window.XLSX && XLSX?.utils) {
+            clearInterval(timer);
+            resolve(true);
+          } else if (Date.now() - start > timeoutMs) {
+            clearInterval(timer);
+            try { showToast('Библиотека XLSX недоступна', 'error'); } catch {}
+            resolve(false);
+          }
+        }, 50);
+      });
+    }
+
     let currentData = null;
     let activeChart = null;
     const appSettings = { userName: 'Пользователь', userEmail: '', theme: 'dark', accentColor: '#2a7fff' };
@@ -709,8 +727,8 @@
                 const bestName = parsed.sheetNames?.[0] || '';
                 rows = (parsed.sheets.find(s=>s.name===bestName)?.rows) || [];
               }
-              const cls = classifyDataset(rows, best);
-              await window.electronAPI.datasets.create(`${f.name} [${best}]`, rows, { from: 'dir', type: cls.type });
+              const cls = classifyDataset(rows, bestName);
+              await window.electronAPI.datasets.create(`${f.name} [${bestName}]`, rows, { from: 'dir', type: cls.type });
               created += 1; logs.push(`${f.name}✓`);
             } catch (err) { logs.push(`${f.name}✗`); }
           }
@@ -978,7 +996,9 @@
           kpiEl.style.display='grid';
           kpiEl.innerHTML = kpis.map((k,i)=>`<div class="kpi-card glass"><div class="kpi-label">${k.label}</div><div class="kpi-value">${k.value}</div>${k.series?`<canvas class="kpi-spark" id="kpiSpark${i}"></canvas>`:''}</div>`).join('');
           // render sparklines
-          kpis.forEach((k,i)=>{ if (!k.series) return; const cvs = document.getElementById(`kpiSpark${i}`); if (!cvs) return; const ctx = cvs.getContext('2d'); new Chart(ctx, { type:'line', data:{ labels:k.series.map((_,idx)=>idx+1), datasets:[{ data:k.series, borderColor:'rgba(42,127,255,1)', backgroundColor:'rgba(42,127,255,0.15)', fill:true, tension:0.35, pointRadius:0 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:{ enabled:false } }, scales:{ x:{ display:false }, y:{ display:false } } }); });
+          if (window.Chart) {
+            kpis.forEach((k,i)=>{ if (!k.series) return; const cvs = document.getElementById(`kpiSpark${i}`); if (!cvs) return; const ctx = cvs.getContext('2d'); new Chart(ctx, { type:'line', data:{ labels:k.series.map((_,idx)=>idx+1), datasets:[{ data:k.series, borderColor:'rgba(42,127,255,1)', backgroundColor:'rgba(42,127,255,0.15)', fill:true, tension:0.35, pointRadius:0 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:{ enabled:false } }, scales:{ x:{ display:false }, y:{ display:false } } }); });
+          }
         } else { kpiEl.style.display='none'; kpiEl.innerHTML=''; }
         renderChartIfApplicable(resultEl, currentReportRows);
         showToast('Отчёт готов', 'success');
@@ -1005,7 +1025,7 @@
     }
 
     function exportToXlsx(rows) {
-      if (!rows || rows.length === 0) return; const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Report'); XLSX.writeFile(wb, 'report.xlsx');
+      if (!rows || rows.length === 0) return; if (!window.XLSX) { try{ showToast('Библиотека XLSX недоступна', 'error'); }catch{} return; } const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Report'); XLSX.writeFile(wb, 'report.xlsx');
     }
 
     document.getElementById('runReportBtn').addEventListener('click', runSelectedReport);
