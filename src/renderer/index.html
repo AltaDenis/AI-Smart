@@ -663,6 +663,7 @@
         const f = e.dataTransfer.files?.[0]; if (!f) return;
         try {
           showLoading();
+          const ok = await ensureXlsx(); if (!ok) { hideLoading(); return; }
           const name = f.name; const ext = name.split('.').pop().toLowerCase();
           if (ext === 'csv') { const text = await f.text(); const wb = XLSX.read(text, { type: 'string' }); await openSheetPicker(wb, name); }
           else { const buf = await f.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array' }); await openSheetPicker(wb, name); }
@@ -680,6 +681,7 @@
         const name = file.name; const ext = name.split('.').pop().toLowerCase();
         try {
           showLoading();
+          const ok = await ensureXlsx(); if (!ok) { fileInput.value=''; hideLoading(); return; }
           if (ext === 'csv') { const text = await file.text(); const wb = XLSX.read(text, { type: 'string' }); await openSheetPicker(wb, name); }
           else { const buf = await file.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array' }); await openSheetPicker(wb, name); }
           showToast('Файл загружен', 'success');
@@ -694,6 +696,7 @@
         e.stopPropagation();
         try {
           showLoading();
+          const ok = await ensureXlsx(); if (!ok) { hideLoading(); return; }
           await loadBuiltInTariffs();
           const files = await window.electronAPI.openDirectory();
           if (!files || files.length === 0) return;
@@ -754,6 +757,7 @@
         const f = e.dataTransfer.files?.[0]; if (!f) return;
         try {
           showLoading();
+          const ok = await ensureXlsx(); if (!ok) { hideLoading(); return; }
           const name = f.name; const ext = name.split('.').pop().toLowerCase();
           if (ext === 'csv') { const text = await f.text(); const wb = XLSX.read(text, { type: 'string' }); await openSheetPicker(wb, name); }
           else { const buf = await f.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array' }); await openSheetPicker(wb, name); }
@@ -766,6 +770,7 @@
     async function openExcelDialog() {
       try {
         showLoading();
+        const ok = await ensureXlsx(); if (!ok) { hideLoading(); return; }
         const file = await window.electronAPI.openFile();
         if (!file) return;
         if (file.ext === 'csv') { const csvText = atob(file.data); const wb = XLSX.read(csvText, { type: 'string' }); await openSheetPicker(wb, file.name); }
@@ -968,6 +973,7 @@
     function renderChartIfApplicable(container, rows) {
       const hasMargin = rows.length && Object.prototype.hasOwnProperty.call(rows[0], 'margin');
       if (!hasMargin) return;
+      if (!window.Chart) return;
       const canvas = document.createElement('canvas'); canvas.height = 220; container.prepend(canvas);
       const labels = rows.slice(0, 50).map((_, i) => `#${i+1}`);
       const values = rows.slice(0, 50).map(r => Number(r.margin) || 0);
@@ -991,7 +997,9 @@
     document.getElementById('exportCsvBtn').addEventListener('click', () => exportToCsv(currentReportRows));
     document.getElementById('exportXlsxBtn').addEventListener('click', () => exportToXlsx(currentReportRows));
 
-    const reportsTabBtn = document.querySelector('[data-tab="reports"]'); if (reportsTabBtn) { reportsTabBtn.addEventListener('click', async () => { await renderReports(); await loadExistingMapping(); }); }
+    const reportsTabBtn = document.querySelector('[data-tab="reports"]'); if (reportsTabBtn) { reportsTabBtn.addEventListener('click', async () => { try{ await renderReports(); await loadExistingMapping(); }catch(e){ showToast('Ошибка инициализации отчётов','error'); } }); }
+    // Also render once on load so карточки всегда видны
+    document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(()=>{ try{ renderReports(); }catch(_){} }, 0); });
 
     document.getElementById('autoMapBtn').addEventListener('click', async () => { const fields = await getAvailableFieldsForSelectedDataset(); autoMapColumns(fields); });
     document.getElementById('saveMappingBtn').addEventListener('click', async () => { const select = document.getElementById('reportDatasetSelect'); const datasetId = select.value; const mapping = {}; document.querySelectorAll('[data-map-key]')?.forEach(sel => { const key = sel.getAttribute('data-map-key'); if (sel.value) mapping[key] = sel.value; }); await window.electronAPI.mappings.set(datasetId, selectedReportId, mapping); showToast('Маппинг сохранён', 'success'); });
