@@ -1072,5 +1072,31 @@
       return best;
     }
   </script>
+
+  <script>
+    // Safety helpers in case main init fails
+    (function(){
+      if (!window.showToast) window.showToast = function(t){ try{ console.log('[toast]', t); }catch{} };
+      if (!window.hideLoading) window.hideLoading = function(){ const o=document.getElementById('loadingOverlay'); o&&o.classList.remove('active'); };
+      if (!window.showLoading) window.showLoading = function(){ const o=document.getElementById('loadingOverlay'); o&&o.classList.add('active'); };
+      document.addEventListener('click', function(e){
+        var el;
+        // Open reports: ensure gallery render
+        el = e.target && e.target.closest ? e.target.closest('.nav-item[data-tab="reports"]') : null;
+        if (el && typeof renderReports === 'function') { setTimeout(function(){ renderReports().catch?.(()=>{}); }, 0); }
+        // Datasets tab: refresh list
+        el = e.target && e.target.closest ? e.target.closest('.nav-item[data-tab="datasets"]') : null;
+        if (el && typeof renderDatasets === 'function') { setTimeout(function(){ renderDatasets(); }, 0); }
+        // Select file
+        el = e.target && e.target.closest ? e.target.closest('#selectFileBtn') : null;
+        if (el) { var inp=document.getElementById('fileInput'); if (inp) { e.preventDefault(); inp.click(); } }
+        // Open directory
+        el = e.target && e.target.closest ? e.target.closest('#openDirBtn') : null;
+        if (el && window.electronAPI && typeof window.electronAPI.openDirectory === 'function') {
+          e.preventDefault(); showLoading(); window.electronAPI.openDirectory().then(function(){ hideLoading(); }).catch(function(){ hideLoading(); });
+        }
+      }, true);
+    })();
+  </script>
 </body>
 </html>
