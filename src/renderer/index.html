@@ -281,6 +281,7 @@
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap: wrap; margin-bottom: 8px;">
           <button class="btn" id="selectFileBtn">Выбрать файл</button>
           <button class="btn btn-secondary" id="openDirBtn">Открыть папку</button>
+          <button class="btn btn-secondary" id="loadToManualBtn" title="Загрузить данные в таблицу для ручного редактирования">В таблицу</button>
         </div>
         <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" />
         <i class="ti ti-upload file-upload-icon"></i>
@@ -288,6 +289,35 @@
         <small>Поддерживаемые форматы: XLSX, CSV, XLS. Или выберите папку с файлами ниже.</small>
       </div>
       <div id="fileSummary" style="color: var(--text-secondary);"></div>
+
+      <div id="unitManualCard" class="card section" style="margin-top:12px;">
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:8px;">
+          <div style="font-weight:600;">Таблица расчёта (ручной ввод)</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary" id="addManualRowBtn"><i class="ti ti-plus"></i>&nbsp;Добавить строку</button>
+            <button class="btn" id="computeUnitBtn"><i class="ti ti-calculator"></i>&nbsp;Рассчитать</button>
+            <button class="btn" id="saveManualDatasetBtn"><i class="ti ti-database"></i>&nbsp;Сохранить как набор</button>
+          </div>
+        </div>
+        <div style="overflow:auto; border:1px solid var(--border); border-radius:8px;">
+          <table class="table zebra" id="unitManualTable" style="min-width:900px;">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Название</th>
+                <th>Категория (путь)</th>
+                <th>Схема</th>
+                <th>Цена</th>
+                <th>Себестоимость</th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="unitResult" class="card section glass" style="margin-top:12px; display:none;"></div>
       </div>
     </div>
 
@@ -1125,6 +1155,92 @@
       (wb.SheetNames||[]).forEach(n=>{ const s=scoreSheet(wb.Sheets[n]); if (s>bestScore) { bestScore=s; best=n; } });
       return best;
     }
+
+    // Manual Unit Economics table logic
+    function makeManualRow(row={}){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input class="input" value="${row.sku||''}" placeholder="SKU"/></td>
+        <td><input class="input" value="${row.name||''}" placeholder="Название"/></td>
+        <td><input class="input" value="${row.category_path||''}" placeholder="Категория / Путь"/></td>
+        <td>
+          <select class="input">
+            <option ${row.scheme==='FBS'?'selected':''}>FBS</option>
+            <option ${row.scheme==='FBY'?'selected':''}>FBY</option>
+            <option ${row.scheme==='DBS'?'selected':''}>DBS</option>
+          </select>
+        </td>
+        <td><input class="input" type="number" step="0.01" value="${row.price||''}" placeholder="0"/></td>
+        <td><input class="input" type="number" step="0.01" value="${row.cost||''}" placeholder="0"/></td>
+        <td><button class="icon-btn danger" title="Удалить"><i class="ti ti-trash"></i></button></td>
+      `;
+      const del = tr.querySelector('button');
+      del.addEventListener('click', ()=> tr.remove());
+      return tr;
+    }
+    function readManualRows(){
+      const rows=[]; const tbody=document.querySelector('#unitManualTable tbody');
+      tbody.querySelectorAll('tr').forEach(tr=>{
+        const tds = tr.querySelectorAll('td');
+        rows.push({
+          sku: tds[0].querySelector('input')?.value?.trim()||'',
+          name: tds[1].querySelector('input')?.value?.trim()||'',
+          category_path: tds[2].querySelector('input')?.value?.trim()||'',
+          scheme: tds[3].querySelector('select')?.value?.trim()||'FBS',
+          price: Number(tds[4].querySelector('input')?.value||0),
+          cost: Number(tds[5].querySelector('input')?.value||0),
+        });
+      });
+      return rows;
+    }
+    function writeManualRows(rows){
+      const tbody=document.querySelector('#unitManualTable tbody');
+      tbody.innerHTML='';
+      rows.forEach(r=> tbody.appendChild(makeManualRow(r)));
+      if (rows.length===0) tbody.appendChild(makeManualRow({}));
+    }
+    const addManualRowBtn = document.getElementById('addManualRowBtn'); if (addManualRowBtn) addManualRowBtn.addEventListener('click', ()=>{ const tbody=document.querySelector('#unitManualTable tbody'); tbody.appendChild(makeManualRow({})); });
+    const loadToManualBtn = document.getElementById('loadToManualBtn'); if (loadToManualBtn) loadToManualBtn.addEventListener('click', ()=>{
+      // map currentData (parsed) to manual schema when possible
+      if (!currentData || !Array.isArray(currentData) || currentData.length===0) { showToast('Нет данных для загрузки в таблицу', 'error'); return; }
+      const sample = currentData[0]||{}; const keys = Object.keys(sample).map(k=>k.toLowerCase());
+      function pick(obj, names){ for (const n of names){ const k = Object.keys(obj).find(kk => kk.toLowerCase()===n.toLowerCase()); if (k) return obj[k]; } return ''; }
+      const rows = currentData.slice(0, 500).map(r=>({
+        sku: pick(r,['sku','ваш sku','ваш sku *','артикул продавца','ваш sku *_1']),
+        name: pick(r,['name','название товара','название товара *','наименование']),
+        category_path: pick(r,['category_path','категория на маркете *','категория']),
+        scheme: 'FBS',
+        price: Number(String(pick(r,['price','цена','цена *','стоимость продажи'])).replace(/[^0-9.,-]/g,'').replace(',','.'))||0,
+        cost: Number(String(pick(r,['cost','себестоимость','закуп','закупка'])).replace(/[^0-9.,-]/g,'').replace(',','.'))||0,
+      }));
+      writeManualRows(rows);
+      showToast('Данные загружены в таблицу', 'success');
+    });
+    async function computeManual(){
+      await loadBuiltInTariffs().catch(()=>{});
+      const rows = readManualRows();
+      const result = rows.map(r=>{
+        const ratePct = matchTariffForCategory((r.scheme||'FBS').toUpperCase(), r.category_path);
+        const commission = r.price * (ratePct/100);
+        const logistics = 0;
+        const margin = r.price - r.cost - commission - logistics;
+        const marginPct = r.price ? margin/r.price*100 : 0;
+        return { ...r, ratePct, commission: Number(commission.toFixed(2)), logistics, margin: Number(margin.toFixed(2)), marginPct: Number(marginPct.toFixed(2)) };
+      });
+      const kpiHtml = (()=>{ const n=result.length||1; const avgMargin=(result.reduce((a,c)=>a+c.margin,0)/n)||0; const avgPct=(result.reduce((a,c)=>a+c.marginPct,0)/n)||0; return `<div class="kpi-grid" style="margin-bottom:8px;"><div class="kpi-card glass"><div class="kpi-label">Позиций</div><div class="kpi-value">${result.length}</div></div><div class="kpi-card glass"><div class="kpi-label">Средняя маржа</div><div class="kpi-value">${avgMargin.toFixed(0)}</div></div><div class="kpi-card glass"><div class="kpi-label">Средняя маржинальность</div><div class="kpi-value">${avgPct.toFixed(2)}%</div></div></div>`; })();
+      const resultEl = document.getElementById('unitResult');
+      if (resultEl) {
+        resultEl.style.display='block';
+        resultEl.innerHTML = kpiHtml + renderTable(result.map(({sku,name,category_path,scheme,price,cost,ratePct,commission,logistics,margin,marginPct})=>({sku,name,category_path,scheme,price,cost,ratePct,commission,logistics,margin,marginPct})).slice(0,1)) + renderTable(result);
+      }
+      return result;
+    }
+    const computeUnitBtn = document.getElementById('computeUnitBtn'); if (computeUnitBtn) computeUnitBtn.addEventListener('click', computeManual);
+    const saveManualDatasetBtn = document.getElementById('saveManualDatasetBtn'); if (saveManualDatasetBtn) saveManualDatasetBtn.addEventListener('click', async ()=>{
+      const rows = readManualRows(); if (!rows.length) { showToast('Нет данных для сохранения', 'error'); return; }
+      const name = prompt('Имя набора данных:', 'Юнитка (ручной ввод)'); if (!name) return;
+      showLoading(); try { await window.electronAPI.datasets.create(name, rows, { from: 'manual', type: 'catalog' }); showToast('Набор сохранён', 'success'); } catch { showToast('Ошибка сохранения', 'error'); } finally { hideLoading(); }
+    });
   </script>
 
   <script>
