@@ -675,7 +675,7 @@
       sheetModal.classList.add('active');
       document.body.classList.add('modal-open');
       return new Promise((resolve)=>{
-        applySheet.onclick = ()=>{ const sel = sheetSelect.value; const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sel], { defval: null }); currentData = rows; const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${tempFileName}», лист «${sel}»: ${rows.length||0} строк.`; sheetModal.classList.remove('active'); document.body.classList.remove('modal-open'); resolve(true); };
+        applySheet.onclick = ()=>{ const sel = sheetSelect.value; const ws = workbook.Sheets[sel]; const rows = rowsFromSheetSmart(ws); currentData = rows; const cls = classifyDataset(rows, sel); const summary = document.getElementById('fileSummary'); if (summary) summary.textContent = `Файл «${tempFileName}», лист «${sel}»: ${rows.length||0} строк. Тип: ${cls.label}`; sheetModal.classList.remove('active'); document.body.classList.remove('modal-open'); resolve(true); };
         const cancel = ()=>{ sheetModal.classList.remove('active'); document.body.classList.remove('modal-open'); resolve(false); };
         cancelSheet.onclick = cancel; closeSheetModal.onclick = cancel;
         sheetModal.onclick = (e)=>{ if (e.target===sheetModal) cancel(); };
@@ -683,7 +683,7 @@
     }
 
     function renderSheetPreview(name) {
-      try { const ws = tempWorkbook?.Sheets?.[name]; if (!ws) { sheetPreview.innerHTML=''; return; } const rows = XLSX.utils.sheet_to_json(ws, { defval: null }).slice(0, 50); sheetPreview.innerHTML = renderTable(rows); }
+      try { const ws = tempWorkbook?.Sheets?.[name]; if (!ws) { sheetPreview.innerHTML=''; return; } const rows = rowsFromSheetSmart(ws).slice(0, 50); sheetPreview.innerHTML = renderTable(rows); }
       catch { sheetPreview.innerHTML=''; }
     }
     if (sheetSelect) sheetSelect.addEventListener('change', ()=> renderSheetPreview(sheetSelect.value));
@@ -760,7 +760,9 @@
     // Reports
     const reportsRegistry = [
       { id: 'summary-basic', name: 'Сводка по данным', description: 'Количество строк и колонок, список полей', requiredFields: [], compute: (rows) => { const rowsCount = rows.length; const fields = Array.from(new Set(rows.flatMap(r => Object.keys(r)))); return { summary: { rowsCount, columnsCount: fields.length }, rows: fields.map(f => ({ field: f })) }; } },
-      { id: 'unit-mock', name: 'Юнит-экономика (черновик)', description: 'Пример отчёта с маппингом: Цена, Себестоимость, Комиссия, Логистика', requiredFields: ['price', 'cost', 'commission', 'logistics'], compute: (rows, mapping) => { const mapped = (row, key) => row[mapping[key] || key]; const result = rows.map(r => { const price = Number(mapped(r, 'price')) || 0; const cost = Number(mapped(r, 'cost')) || 0; const commission = Number(mapped(r, 'commission')) || 0; const logistics = Number(mapped(r, 'logistics')) || 0; const margin = price - cost - commission - logistics; const marginPct = price ? (margin / price) * 100 : 0; return { price, cost, commission, logistics, margin, marginPct: Number(marginPct.toFixed(2)) }; }); return { summary: null, rows: result }; } }
+      { id: 'unit-mock', name: 'Юнит-экономика (черновик)', description: 'Пример отчёта с маппингом: Цена, Себестоимость, Комиссия, Логистика', requiredFields: ['price', 'cost', 'commission', 'logistics'], compute: (rows, mapping) => { const mapped = (row, key) => row[mapping[key] || key]; const result = rows.map(r => { const price = Number(mapped(r, 'price')) || 0; const cost = Number(mapped(r, 'cost')) || 0; const commission = Number(mapped(r, 'commission')) || 0; const logistics = Number(mapped(r, 'logistics')) || 0; const margin = price - cost - commission - logistics; const marginPct = price ? (margin / price) * 100 : 0; return { price, cost, commission, logistics, margin, marginPct: Number(marginPct.toFixed(2)) }; }); return { summary: null, rows: result }; } },
+      { id: 'catalog-audit', name: 'Аудит каталога', description: 'Проверка обязательных полей, нормализация габаритов и веса', requiredFields: ['sku','name','category','price'], compute: (rows, mapping) => { const m=(r,k)=> r[mapping[k]||k]; function parseDims(v){ if(!v) return {length:null,width:null,height:null}; const s=String(v).replace(/,/g,'.'); const parts=s.split(/[xX\/\-\s]+/).map(t=>Number(t)||null).filter(v=>v!=null); return {length:parts[0]||null,width:parts[1]||null,height:parts[2]||null}; } const out = rows.map(r=>{ const sku=m(r,'sku'); const name=m(r,'name'); const category=m(r,'category')||m(r,'category_path'); const price=Number(String(m(r,'price')).replace(/[^0-9.,-]/g,'').replace(',','.'))||0; const weight=Number(String(m(r,'weight_kg')||m(r,'weight')).replace(',','.'))||null; const dims = parseDims(m(r,'dimensions_cm')); const issues=[]; if(!sku) issues.push('Нет SKU'); if(!name) issues.push('Нет названия'); if(!category) issues.push('Нет категории'); if(!(price>0)) issues.push('Цена<=0'); return { sku, name, category, price, weight_kg:weight, ...dims, issues: issues.join('; ') }; }); return { summary: null, rows: out }; } },
+      { id: 'sales-funnel', name: 'Воронка продаж (сводка)', description: 'Конверсия и эффективность по SKU/брендам/категориям', requiredFields: ['sku','brand','category','shows','added_to_cart','ordered_units','orders_amount_rub','delivered_units','delivered_amount_rub','visibility_index_pct','cart_to_order_conv_pct'], compute: (rows, mapping) => { const g=(r,k)=> r[mapping[k]||k]; const norm = rows.map(r=>({ category:g(r,'category'), brand:g(r,'brand'), sku:g(r,'sku'), shows:Number(g(r,'shows'))||0, atc:Number(g(r,'added_to_cart'))||0, ord:Number(g(r,'ordered_units'))||0, ordAmt:Number(g(r,'orders_amount_rub'))||0, del:Number(g(r,'delivered_units'))||0, delAmt:Number(g(r,'delivered_amount_rub'))||0, vis:Number(String(g(r,'visibility_index_pct')).replace(',','.'))||0, conv:Number(String(g(r,'cart_to_order_conv_pct')).replace(',','.'))||0 })); const total = norm.reduce((a,c)=>({ shows:a.shows+c.shows, atc:a.atc+c.atc, ord:a.ord+c.ord, ordAmt:a.ordAmt+c.ordAmt, del:a.del+c.del, delAmt:a.delAmt+c.delAmt }), {shows:0,atc:0,ord:0,ordAmt:0,del:0,delAmt:0}); const kpi=[{label:'Показы',value:total.shows},{label:'В корзину',value:total.atc},{label:'Заказано, шт',value:total.ord},{label:'Заказано, ₽',value:total.ordAmt.toFixed(0)},{label:'Доставлено, шт',value:total.del},{label:'Выручка, ₽',value:total.delAmt.toFixed(0)}]; const table = norm.map(x=>({ sku:x.sku, brand:x.brand, category:x.category, shows:x.shows, atc:x.atc, ord:x.ord, ordAmt: x.ordAmt, del:x.del, delAmt:x.delAmt, conv_pct: (x.ord && x.atc ? (x.ord/x.atc*100):0).toFixed(2) })); return { summary: { rowsCount: rows.length, columnsCount: Object.keys(table[0]||{}).length, kpi }, rows: table }; } }
     ];
 
     let selectedReportId = reportsRegistry[0]?.id; let currentReportRows = [];
@@ -953,6 +955,51 @@
 
     // Excel open via dialog
     document.addEventListener('keydown', (e)=>{ if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='i') { e.preventDefault(); openExcelDialog(); } });
+
+    // Smart parsing utilities
+    function normalizeHeaderCell(text) {
+      if (text == null) return '';
+      const t = String(text).replace(/\*/g, '').replace(/\s+/g, ' ').trim();
+      return t;
+    }
+    function detectHeaderRow(rows, maxScan = 30) {
+      const keyHints = ['Ваш SKU', 'Название товара', 'Категория', 'Цена', 'Индекс видимости'];
+      let bestIdx = -1; let bestScore = -1;
+      for (let i = 0; i < Math.min(rows.length, maxScan); i++) {
+        const row = rows[i] || [];
+        const cells = row.map(normalizeHeaderCell).filter(Boolean);
+        const nonEmpty = cells.length;
+        const hit = cells.reduce((a, c) => a + (keyHints.some(k => c.toLowerCase().includes(k.toLowerCase())) ? 1 : 0), 0);
+        const score = hit * 10 + nonEmpty; // prioritize hint hits
+        if (score > bestScore && nonEmpty >= 3) { bestScore = score; bestIdx = i; }
+      }
+      return bestIdx >= 0 ? bestIdx : 0;
+    }
+    function rowsFromSheetSmart(ws) {
+      // read as matrix
+      const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+      if (!matrix || matrix.length === 0) return [];
+      const headerIdx = detectHeaderRow(matrix);
+      const headerRow = (matrix[headerIdx] || []).map(normalizeHeaderCell);
+      const cols = headerRow.map((h, idx) => h || `col_${idx+1}`);
+      const dataRows = matrix.slice(headerIdx + 1);
+      return dataRows
+        .filter(r => (r || []).some(v => v !== null && v !== undefined && String(v).trim() !== ''))
+        .map(r => {
+          const obj = {};
+          cols.forEach((c, i) => { obj[c] = r[i] ?? null; });
+          return obj;
+        });
+    }
+    function classifyDataset(rows, sheetName = '') {
+      const lowerKeys = new Set(Object.keys(rows?.[0] || {}).map(k => k.toLowerCase()));
+      const has = (substr) => Array.from(lowerKeys).some(k => k.includes(substr));
+      if (has('индекс видимости') && has('доставлено') && has('корзин')) return { type: 'sales_funnel', label: 'Воронка продаж' };
+      if (has('категория (уровень 1)') && has('тариф')) return { type: 'tariffs', label: 'Тарифы категорий' };
+      if (/географ/i.test(sheetName) || has('регион')) return { type: 'geography', label: 'География продаж' };
+      if (has('ваш sku') || has('категория на маркете') || has('габариты')) return { type: 'catalog', label: 'Каталог товаров' };
+      return { type: 'generic', label: 'Данные' };
+    }
   </script>
 </body>
 </html>
