@@ -117,6 +117,45 @@
     .tab-content.active { display: block !important; }
     .hero-rotate { transition: opacity 300ms ease, transform 300ms ease; }
     .hero-hidden { opacity: 0; transform: translateY(8px); }
+    /* Premium UI additions */
+    .btn { cursor: pointer; border: none; outline: none; padding: 10px 14px; border-radius: var(--radius-md); color: #fff; background: linear-gradient(180deg, var(--accent-blue), var(--accent-active)); box-shadow: 0 6px 18px rgba(42,127,255,0.25); transition: transform var(--transition), filter var(--transition), box-shadow var(--transition); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+    .header { display:flex; align-items:center; justify-content: space-between; margin-bottom: 16px; }
+    .page-title { font-size: 22px; font-weight: 700; letter-spacing: 0.2px; }
+    .user-profile { display:flex; align-items:center; gap:10px; cursor:pointer; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-blue); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; box-shadow: var(--glow); }
+    /* Loader overlay */
+    .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); z-index: 1200; }
+    .overlay.active { display: flex; }
+    .spinner { width: 42px; height: 42px; border: 3px solid rgba(255,255,255,0.2); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    /* Settings modal */
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); z-index: 1500; }
+    .modal.active { display: flex; }
+    .modal-content { width: 680px; max-width: 92vw; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--card-shadow); overflow: hidden; }
+    .modal-header { display:flex; align-items:center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    .modal-title { font-weight: 700; }
+    .modal-close { background: transparent; border: 1px solid var(--border); color: var(--text-primary); border-radius: 10px; width: 32px; height: 32px; cursor: pointer; }
+    .modal-body { padding: 14px; }
+    .modal-footer { display:flex; gap:8px; justify-content: flex-end; padding: 12px 14px; border-top: 1px solid var(--border); }
+    .settings-form { display:grid; gap: 12px; }
+    .form-group { display:grid; gap:6px; }
+    .form-group label { color: var(--text-secondary); font-size: 13px; }
+    .settings-form input[type="text"], .settings-form input[type="email"], .settings-form input[type="color"] { height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-tertiary); color: var(--text-primary); padding: 0 10px; }
+    .color-picker { display:flex; align-items:center; gap:10px; }
+    .color-preview { width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border); }
+    /* Toasts */
+    .toast-root { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 1600; }
+    .toast { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; box-shadow: var(--card-shadow); animation: toastIn 180ms ease-out; }
+    .toast.success { border-color: rgba(34,197,94,0.45); }
+    .toast.error { border-color: rgba(239,68,68,0.45); }
+    @keyframes toastIn { from { transform: translateY(6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    /* File upload */
+    .file-upload { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; border:1px dashed var(--border); border-radius: 12px; text-align:center; min-height: 160px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); }
+    .file-upload-icon { font-size: 32px; color: var(--accent-blue); }
+    /* Dashboard hero */
+    .dashboard-placeholder { display:flex; flex-direction:column; align-items:flex-start; gap: 8px; padding: 18px; }
+    .dashboard-placeholder .greeting { font-size: 18px; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -469,7 +508,7 @@
         if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
         if (savedColor) applyAccent(savedColor);
         const setBgIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.style.backgroundColor = val; };
-        const setTextIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        const setTextIfExists = (id, val) => { const el = document.getElementById(id); if (!el) return; if ('value' in el) { el.value = val; } else { el.textContent = val; } };
         if (savedUserName) { setTextIfExists('userNamePage', savedUserName); setTextIfExists('userNameModal', savedUserName); const avatar = document.querySelector('.user-avatar'); if (avatar) avatar.textContent = savedUserName[0].toUpperCase(); const greeting = document.getElementById('greetingText'); if (greeting) greeting.textContent = `Добро пожаловать, ${savedUserName}!`; }
         if (savedUserEmail) { setTextIfExists('userEmailPage', savedUserEmail); setTextIfExists('userEmailModal', savedUserEmail); }
         const color = savedColor || '#2a7fff'; ['Page', 'Modal'].forEach(prefix => { setTextIfExists(`colorValue${prefix}`, color); setBgIfExists(`colorPreview${prefix}`, color); });
