@@ -11,5 +11,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     create: (name, rows, source) => ipcRenderer.invoke('datasets:create', name, rows, source),
     rename: (id, newName) => ipcRenderer.invoke('datasets:rename', id, newName),
     delete: (id) => ipcRenderer.invoke('datasets:delete', id),
+  },
+  mappings: {
+    get: (datasetId, reportId) => ipcRenderer.invoke('mappings:get', datasetId, reportId),
+    set: (datasetId, reportId, mapping) => ipcRenderer.invoke('mappings:set', datasetId, reportId, mapping),
   }
 });

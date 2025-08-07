@@ -3,6 +3,7 @@ const path = require('path');
 const { getSetting, setSetting } = require('./services/settingsService');
 const { openSingleFile, openDirectoryOfFiles } = require('./services/filesService');
 const datasets = require('./services/datasetsService');
+const mappings = require('./services/mappingsService');
 
 function createMainWindow() {
   const mainWindow = new BrowserWindow({
@@ -43,3 +44,6 @@ ipcMain.handle('datasets:get', (_e, id) => datasets.getDataset(id));
 ipcMain.handle('datasets:create', (_e, name, rows, source) => datasets.createDataset(name, rows, source));
 ipcMain.handle('datasets:rename', (_e, id, newName) => datasets.renameDataset(id, newName));
 ipcMain.handle('datasets:delete', (_e, id) => datasets.deleteDataset(id));
+
+ipcMain.handle('mappings:get', (_e, datasetId, reportId) => mappings.getMapping(datasetId, reportId));
+ipcMain.handle('mappings:set', (_e, datasetId, reportId, mapping) => mappings.setMapping(datasetId, reportId, mapping));
